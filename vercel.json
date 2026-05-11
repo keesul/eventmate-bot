@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "name": "eventmate-bot",
+  "builds": [
+    {
+      "src": "webapp/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/webapp/$1"
+    }
+  ]
+}
