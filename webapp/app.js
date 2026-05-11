@@ -25,6 +25,9 @@ const typeButtons = document.querySelectorAll('.type-btn');
 // Get user ID from Telegram
 const userId = tg.initDataUnsafe?.user?.id || 123456;
 
+// API Base URL
+const API_BASE_URL = 'https://eventmate-bot-production.up.railway.app';
+
 // Utility functions
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -105,7 +108,7 @@ function toggleBirthYearField() {
 
 async function loadEvents() {
   try {
-    const response = await fetch(`/api/events/${userId}`);
+    const response = await fetch(`${API_BASE_URL}/api/events/${userId}`);
     const data = await response.json();
     if (data.success) {
       events = data.events || [];
