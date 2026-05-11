@@ -1,9 +1,2 @@
-{
-  "nixpacks": {
-    "phases": {
-      "setup": {
-        "nixPkgs": ["nodejs-20_x"]
-      }
-    }
-  }
-}
+[phases.setup]
+nixPkgs = ["nodejs-20_x"]
