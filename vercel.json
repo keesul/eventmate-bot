@@ -13,15 +13,15 @@
   "routes": [
     {
       "src": "/api/webhook",
-      "dest": "/api/webhook.js"
+      "dest": "/api/webhook.cjs"
     },
     {
       "src": "/api/events/(.*)",
-      "dest": "/api/events/[...params].js"
+      "dest": "/api/events/[...params].cjs"
     },
     {
       "src": "/api/events",
-      "dest": "/api/events/[...params].js"
+      "dest": "/api/events/[...params].cjs"
     },
     {
       "src": "/(.*)",
