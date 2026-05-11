@@ -12,6 +12,10 @@
   ],
   "routes": [
     {
+      "src": "/api/test-env",
+      "dest": "/api/test-env.cjs"
+    },
+    {
       "src": "/api/webhook",
       "dest": "/api/webhook.cjs"
     },
