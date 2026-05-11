@@ -363,6 +363,7 @@ async function handleSubmit(e) {
   e.preventDefault();
 
   const formData = {
+    userId: userId,
     title: document.getElementById('title').value.trim(),
     type: selectedType,
     date: document.getElementById('date').value,
@@ -380,21 +381,45 @@ async function handleSubmit(e) {
 
   tg.HapticFeedback.notificationOccurred('success');
 
-  if (editingEventId) {
-    // Update existing event
-    const data = {
-      action: 'update_event',
-      id: editingEventId,
-      ...formData
-    };
-    tg.sendData(JSON.stringify(data));
-  } else {
-    // Create new event
-    const data = {
-      action: 'create_event',
-      ...formData
-    };
-    tg.sendData(JSON.stringify(data));
+  try {
+    if (editingEventId) {
+      // Update existing event via API
+      const response = await fetch(`${API_BASE_URL}/api/events/${editingEventId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        tg.showAlert('✅ Подію оновлено!');
+        await loadEvents();
+        renderEvents();
+      } else {
+        tg.showAlert('❌ Помилка оновлення події');
+      }
+    } else {
+      // Create new event via API
+      const response = await fetch(`${API_BASE_URL}/api/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        tg.showAlert('✅ Подію створено!');
+        await loadEvents();
+        renderEvents();
+      } else {
+        tg.showAlert('❌ Помилка створення події');
+      }
+    }
+  } catch (err) {
+    console.error('Error saving event:', err);
+    tg.showAlert('❌ Помилка з\'єднання з сервером');
   }
 
   closeModalHandler();
@@ -403,16 +428,31 @@ async function handleSubmit(e) {
 async function handleDelete() {
   if (!editingEventId) return;
 
-  tg.showConfirm('Ви впевнені, що хочете видалити цю подію?', (confirmed) => {
+  tg.showConfirm('Ви впевнені, що хочете видалити цю подію?', async (confirmed) => {
     if (confirmed) {
       tg.HapticFeedback.notificationOccurred('warning');
 
-      const data = {
-        action: 'delete_event',
-        id: editingEventId
-      };
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/events/${editingEventId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userId })
+        });
 
-      tg.sendData(JSON.stringify(data));
+        const result = await response.json();
+
+        if (result.success) {
+          tg.showAlert('🗑 Подію видалено');
+          await loadEvents();
+          renderEvents();
+        } else {
+          tg.showAlert('❌ Помилка видалення події');
+        }
+      } catch (err) {
+        console.error('Error deleting event:', err);
+        tg.showAlert('❌ Помилка з\'єднання з сервером');
+      }
+
       closeModalHandler();
     }
   });
