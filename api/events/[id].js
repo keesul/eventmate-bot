@@ -15,17 +15,32 @@ module.exports = async function handler(req, res) {
     return res.status(200).end();
   }
 
+  const { id } = req.query; // Vercel автоматично парсить [id] з URL
+
   try {
-    // POST /api/events - Create new event
-    if (req.method === 'POST') {
+    // GET /api/events/[userId] - Get all events for user
+    if (req.method === 'GET') {
+      const { data: events, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('user_id', id)
+        .order('event_date', { ascending: true })
+        .order('event_time', { ascending: true });
+
+      if (error) throw error;
+
+      return res.status(200).json({ success: true, events: events || [] });
+    }
+
+    // PUT /api/events/[eventId] - Update event
+    if (req.method === 'PUT') {
       const { userId, title, type, date, time, notes, reminderDays, reminderTime, birthYear } = req.body;
 
       const isRecurring = type === 'birthday';
 
       const { data, error } = await supabase
         .from('events')
-        .insert({
-          user_id: userId,
+        .update({
           title: title,
           type: type,
           event_date: date,
@@ -36,12 +51,29 @@ module.exports = async function handler(req, res) {
           is_recurring: isRecurring,
           birth_year: birthYear || null
         })
+        .eq('id', id)
+        .eq('user_id', userId)
         .select()
         .single();
 
       if (error) throw error;
 
-      return res.status(200).json({ success: true, eventId: data.id });
+      return res.status(200).json({ success: true });
+    }
+
+    // DELETE /api/events/[eventId] - Delete event
+    if (req.method === 'DELETE') {
+      const { userId } = req.body;
+
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      return res.status(200).json({ success: true });
     }
 
     return res.status(400).json({ success: false, error: 'Invalid request' });
