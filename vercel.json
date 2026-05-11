@@ -1,31 +1,3 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "webapp/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/test-env",
-      "dest": "/api/test-env.js"
-    },
-    {
-      "src": "/api/webhook",
-      "dest": "/api/webhook.js"
-    },
-    {
-      "src": "/api/events(.*)",
-      "dest": "/api/events.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/webapp/$1"
-    }
-  ]
+  "version": 2
 }
