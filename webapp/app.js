@@ -70,6 +70,7 @@ function setupEventListeners() {
       typeButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedType = btn.dataset.type;
+      toggleBirthYearField();
       tg.HapticFeedback.impactOccurred('light');
     });
   });
@@ -93,6 +94,13 @@ function setupEventListeners() {
       closeModalHandler();
     }
   });
+}
+
+function toggleBirthYearField() {
+  const birthYearGroup = document.getElementById('birthYearGroup');
+  if (birthYearGroup) {
+    birthYearGroup.style.display = selectedType === 'birthday' ? 'block' : 'none';
+  }
 }
 
 async function loadEvents() {
@@ -299,6 +307,13 @@ function openAddModal() {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('date').value = today;
 
+  // Set default reminder settings
+  document.getElementById('reminderDays').value = '1';
+  document.getElementById('reminderTime').value = '09:00';
+
+  // Show/hide birth year field
+  toggleBirthYearField();
+
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
   tg.HapticFeedback.impactOccurred('medium');
@@ -315,12 +330,18 @@ function openEditModal(eventId) {
   document.getElementById('date').value = event.event_date;
   document.getElementById('time').value = event.event_time || '';
   document.getElementById('notes').value = event.notes || '';
+  document.getElementById('reminderDays').value = event.reminder_days || 1;
+  document.getElementById('reminderTime').value = event.reminder_time || '09:00';
+  document.getElementById('birthYear').value = event.birth_year || '';
 
   // Set type
   typeButtons.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.type === event.type);
   });
   selectedType = event.type;
+
+  // Show/hide birth year field
+  toggleBirthYearField();
 
   deleteBtn.style.display = 'block';
   modal.classList.add('active');
@@ -343,7 +364,10 @@ async function handleSubmit(e) {
     type: selectedType,
     date: document.getElementById('date').value,
     time: document.getElementById('time').value,
-    notes: document.getElementById('notes').value.trim()
+    notes: document.getElementById('notes').value.trim(),
+    reminderDays: parseInt(document.getElementById('reminderDays').value) || 1,
+    reminderTime: document.getElementById('reminderTime').value || '09:00',
+    birthYear: selectedType === 'birthday' ? (parseInt(document.getElementById('birthYear').value) || null) : null
   };
 
   if (!formData.title || !formData.date) {

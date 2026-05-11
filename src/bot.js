@@ -128,7 +128,10 @@ bot.on('web_app_data', async (ctx) => {
     log('📱 Дані з Mini App', { userId: ctx.from.id, action: data.action });
 
     if (data.action === 'create_event') {
-      const { title, type, date, time, notes } = data;
+      const { title, type, date, time, notes, reminderDays, reminderTime, birthYear } = data;
+
+      // Для днів народження автоматично встановлюємо is_recurring = true
+      const isRecurring = type === 'birthday';
 
       const result = await dbQueries.createEvent(
         ctx.from.id,
@@ -136,19 +139,29 @@ bot.on('web_app_data', async (ctx) => {
         type,
         date,
         time || null,
-        notes || null
+        notes || null,
+        reminderDays || 1,
+        reminderTime || '09:00',
+        isRecurring,
+        birthYear || null
       );
 
       const emoji = type === 'birthday' ? '🎂' : type === 'reminder' ? '⏰' : '🎊';
       const formattedDate = format(parse(date, 'yyyy-MM-dd', new Date()), 'd MMMM yyyy', { locale: uk });
 
+      let message = `✅ Подію створено!\n\n${emoji} ${title}\n📅 ${formattedDate}`;
+
+      if (time) message += ` о ${time}`;
+      if (notes) message += `\n📝 ${notes}`;
+      if (isRecurring) message += `\n🔄 Щорічне нагадування`;
+      if (birthYear) {
+        const age = new Date().getFullYear() - birthYear;
+        message += `\n🎈 Вік: ${age} років`;
+      }
+      message += `\n🔔 Нагадаємо за ${reminderDays} ${reminderDays === 1 ? 'день' : 'днів'} о ${reminderTime}`;
+
       await ctx.reply(
-        `✅ Подію створено!\n\n` +
-        `${emoji} ${title}\n` +
-        `📅 ${formattedDate}` +
-        (time ? ` о ${time}` : '') +
-        (notes ? `\n📝 ${notes}` : '') +
-        `\n\n🔔 Ми нагадаємо вам про цю подію!`,
+        message,
         Markup.inlineKeyboard([
           [Markup.button.webApp('📅 Відкрити EventMate', process.env.WEBAPP_URL)]
         ])
@@ -158,9 +171,23 @@ bot.on('web_app_data', async (ctx) => {
     }
 
     if (data.action === 'update_event') {
-      const { id, title, type, date, time, notes } = data;
+      const { id, title, type, date, time, notes, reminderDays, reminderTime, birthYear } = data;
 
-      await dbQueries.updateEvent(title, type, date, time || null, notes || null, id, ctx.from.id);
+      const isRecurring = type === 'birthday';
+
+      await dbQueries.updateEvent(
+        title,
+        type,
+        date,
+        time || null,
+        notes || null,
+        id,
+        ctx.from.id,
+        reminderDays || 1,
+        reminderTime || '09:00',
+        isRecurring,
+        birthYear || null
+      );
 
       await ctx.reply('✅ Подію оновлено!');
       log('✅ Оновлено подію', { eventId: id, userId: ctx.from.id });
@@ -194,9 +221,22 @@ app.get('/api/events/:userId', async (req, res) => {
 
 app.post('/api/events', async (req, res) => {
   try {
-    const { userId, title, type, date, time, notes } = req.body;
+    const { userId, title, type, date, time, notes, reminderDays, reminderTime, birthYear } = req.body;
 
-    const result = await dbQueries.createEvent(userId, title, type, date, time || null, notes || null);
+    const isRecurring = type === 'birthday';
+
+    const result = await dbQueries.createEvent(
+      userId,
+      title,
+      type,
+      date,
+      time || null,
+      notes || null,
+      reminderDays || 1,
+      reminderTime || '09:00',
+      isRecurring,
+      birthYear || null
+    );
 
     log('✅ HTTP створення події', { eventId: result.id, userId });
     res.json({ success: true, eventId: result.id });
@@ -209,9 +249,23 @@ app.post('/api/events', async (req, res) => {
 app.put('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId, title, type, date, time, notes } = req.body;
+    const { userId, title, type, date, time, notes, reminderDays, reminderTime, birthYear } = req.body;
 
-    await dbQueries.updateEvent(title, type, date, time || null, notes || null, id, userId);
+    const isRecurring = type === 'birthday';
+
+    await dbQueries.updateEvent(
+      title,
+      type,
+      date,
+      time || null,
+      notes || null,
+      id,
+      userId,
+      reminderDays || 1,
+      reminderTime || '09:00',
+      isRecurring,
+      birthYear || null
+    );
 
     log('✅ HTTP оновлення події', { eventId: id, userId });
     res.json({ success: true });
@@ -236,43 +290,69 @@ app.delete('/api/events/:id', async (req, res) => {
   }
 });
 
-// Cron job для нагадувань (щодня о 9:00)
-cron.schedule('0 9 * * *', async () => {
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+// Cron job для нагадувань (кожну годину перевіряємо)
+cron.schedule('0 * * * *', async () => {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
 
   try {
-    // Нагадування на сьогодні
-    const todayEvents = await dbQueries.getUpcomingEvents(today);
-    for (const event of todayEvents) {
-      try {
-        const emoji = event.type === 'birthday' ? '🎂' : event.type === 'reminder' ? '⏰' : '🎊';
-        await bot.telegram.sendMessage(
-          event.telegram_id,
-          `🔔 Сьогодні!\n\n${emoji} ${event.title}` +
-          (event.event_time ? `\n⏰ ${event.event_time}` : '') +
-          (event.notes ? `\n📝 ${event.notes}` : '')
-        );
-        log('🔔 Відправлено нагадування (сьогодні)', { eventId: event.id, userId: event.telegram_id });
-      } catch (err) {
-        log('❌ Помилка відправки нагадування', { error: err.message, eventId: event.id });
-      }
-    }
+    // Перевіряємо події на сьогодні та найближчі дні
+    for (let daysAhead = 0; daysAhead <= 7; daysAhead++) {
+      const targetDate = format(addDays(now, daysAhead), 'yyyy-MM-dd');
+      const events = await dbQueries.getUpcomingEvents(targetDate);
 
-    // Нагадування на завтра
-    const tomorrowEvents = await dbQueries.getUpcomingEvents(tomorrow);
-    for (const event of tomorrowEvents) {
-      try {
-        const emoji = event.type === 'birthday' ? '🎂' : event.type === 'reminder' ? '⏰' : '🎊';
-        await bot.telegram.sendMessage(
-          event.telegram_id,
-          `🔔 Нагадування!\n\nЗавтра:\n${emoji} ${event.title}` +
-          (event.event_time ? `\n⏰ ${event.event_time}` : '') +
-          (event.notes ? `\n📝 ${event.notes}` : '')
-        );
-        log('🔔 Відправлено нагадування (завтра)', { eventId: event.id, userId: event.telegram_id });
-      } catch (err) {
-        log('❌ Помилка відправки нагадування', { error: err.message, eventId: event.id });
+      for (const event of events) {
+        try {
+          // Парсимо час нагадування
+          const [reminderHour, reminderMinute] = (event.reminder_time || '09:00').split(':').map(Number);
+          const reminderDays = event.reminder_days || 1;
+
+          // Перевіряємо, чи зараз час для нагадування
+          const shouldRemind = daysAhead === reminderDays &&
+                               currentHour === reminderHour &&
+                               currentMinute === 0;
+
+          if (!shouldRemind) continue;
+
+          const emoji = event.type === 'birthday' ? '🎂' : event.type === 'reminder' ? '⏰' : '🎊';
+          const eventDate = new Date(event.event_date);
+          const currentYear = now.getFullYear();
+
+          let message = '';
+
+          if (daysAhead === 0) {
+            message = `🔔 Сьогодні!\n\n${emoji} ${event.title}`;
+          } else if (daysAhead === 1) {
+            message = `🔔 Нагадування!\n\nЗавтра:\n${emoji} ${event.title}`;
+          } else {
+            message = `🔔 Нагадування!\n\nЧерез ${daysAhead} днів:\n${emoji} ${event.title}`;
+          }
+
+          if (event.event_time) {
+            message += `\n⏰ ${event.event_time}`;
+          }
+
+          // Для днів народження показуємо вік
+          if (event.type === 'birthday' && event.birth_year) {
+            const age = currentYear - event.birth_year;
+            message += `\n🎈 Виповнюється ${age} років`;
+          }
+
+          if (event.notes) {
+            message += `\n📝 ${event.notes}`;
+          }
+
+          await bot.telegram.sendMessage(event.telegram_id, message);
+          log('🔔 Відправлено нагадування', {
+            eventId: event.id,
+            userId: event.telegram_id,
+            daysAhead,
+            reminderTime: event.reminder_time
+          });
+        } catch (err) {
+          log('❌ Помилка відправки нагадування', { error: err.message, eventId: event.id });
+        }
       }
     }
   } catch (err) {

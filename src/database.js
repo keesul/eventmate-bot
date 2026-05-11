@@ -52,7 +52,7 @@ export const dbQueries = {
   },
 
   // Events
-  async createEvent(userId, title, type, eventDate, eventTime, notes) {
+  async createEvent(userId, title, type, eventDate, eventTime, notes, reminderDays = 1, reminderTime = '09:00', isRecurring = false, birthYear = null) {
     const { data, error } = await supabase
       .from('events')
       .insert({
@@ -61,7 +61,11 @@ export const dbQueries = {
         type: type,
         event_date: eventDate,
         event_time: eventTime,
-        notes: notes
+        notes: notes,
+        reminder_days: reminderDays,
+        reminder_time: reminderTime,
+        is_recurring: isRecurring,
+        birth_year: birthYear
       })
       .select()
       .single();
@@ -93,7 +97,7 @@ export const dbQueries = {
     return data;
   },
 
-  async updateEvent(title, type, eventDate, eventTime, notes, eventId, userId) {
+  async updateEvent(title, type, eventDate, eventTime, notes, eventId, userId, reminderDays = 1, reminderTime = '09:00', isRecurring = false, birthYear = null) {
     const { data, error } = await supabase
       .from('events')
       .update({
@@ -101,7 +105,11 @@ export const dbQueries = {
         type: type,
         event_date: eventDate,
         event_time: eventTime,
-        notes: notes
+        notes: notes,
+        reminder_days: reminderDays,
+        reminder_time: reminderTime,
+        is_recurring: isRecurring,
+        birth_year: birthYear
       })
       .eq('id', eventId)
       .eq('user_id', userId)
@@ -133,13 +141,26 @@ export const dbQueries = {
           first_name
         )
       `)
-      .eq('event_date', date)
+      .or(`and(is_recurring.eq.true,event_date.gte.1900-01-01),and(is_recurring.eq.false,event_date.eq.${date})`)
       .order('event_time', { ascending: true });
 
     if (error) throw error;
 
+    // Фільтруємо щорічні події по місяцю і дню
+    const targetDate = new Date(date);
+    const targetMonth = targetDate.getMonth() + 1;
+    const targetDay = targetDate.getDate();
+
+    const filtered = (data || []).filter(event => {
+      if (event.is_recurring) {
+        const eventDate = new Date(event.event_date);
+        return eventDate.getMonth() + 1 === targetMonth && eventDate.getDate() === targetDay;
+      }
+      return true;
+    });
+
     // Flatten the structure
-    return (data || []).map(event => ({
+    return filtered.map(event => ({
       ...event,
       telegram_id: event.users.telegram_id,
       first_name: event.users.first_name

@@ -89,6 +89,43 @@
             >
           </div>
 
+          <div class="form-group" id="birthYearGroup" style="display: block;">
+            <label for="birthYear">Рік народження (необов'язково)</label>
+            <input
+              type="number"
+              id="birthYear"
+              placeholder="Наприклад: 1990"
+              min="1900"
+              max="2026"
+            >
+            <small style="color: var(--text-secondary); font-size: 12px; margin-top: 4px; display: block;">
+              Для розрахунку віку в нагадуваннях
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="reminderDays">Нагадати за</label>
+            <select id="reminderDays">
+              <option value="0">В день події</option>
+              <option value="1" selected>За 1 день</option>
+              <option value="2">За 2 дні</option>
+              <option value="3">За 3 дні</option>
+              <option value="7">За тиждень</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="reminderTime">Час нагадування</label>
+            <input
+              type="time"
+              id="reminderTime"
+              value="09:00"
+            >
+            <small style="color: var(--text-secondary); font-size: 12px; margin-top: 4px; display: block;">
+              О котрій годині відправити нагадування
+            </small>
+          </div>
+
           <div class="form-group">
             <label for="notes">Нотатки (необов'язково)</label>
             <textarea
