@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "echo \"BOT_TOKEN=$BOT_TOKEN\nWEBAPP_URL=$WEBAPP_URL\nPORT=$PORT\nSUPABASE_URL=$SUPABASE_URL\nSUPABASE_ANON_KEY=$SUPABASE_ANON_KEY\" > .env && node src/bot.js",
+    "startCommand": "bash start.sh",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
