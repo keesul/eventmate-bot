@@ -1,4 +1,5 @@
 import { Telegraf, Markup } from 'telegraf';
+import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { dbQueries } from './database.js';
@@ -7,6 +8,8 @@ import { uk } from 'date-fns/locale';
 import express from 'express';
 import cors from 'cors';
 import cron from 'node-cron';
+
+dotenv.config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const app = express();
