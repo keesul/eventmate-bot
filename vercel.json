@@ -20,12 +20,8 @@
       "dest": "/api/webhook.js"
     },
     {
-      "src": "/api/events/(.*)",
-      "dest": "/api/events/[...params].js"
-    },
-    {
-      "src": "/api/events",
-      "dest": "/api/events/[...params].js"
+      "src": "/api/events(.*)",
+      "dest": "/api/events.js"
     },
     {
       "src": "/(.*)",

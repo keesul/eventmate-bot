@@ -15,7 +15,10 @@ module.exports = async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const { userId, eventId } = req.query;
+  // Parse URL: /api/events/123 or /api/events
+  const urlParts = req.url.split('?')[0].split('/').filter(Boolean);
+  const userId = urlParts[2] || null; // /api/events/[userId]
+  const eventId = urlParts[2] || null; // Same position, context determines usage
 
   try {
     // GET /api/events/[userId] - Get all events for user
