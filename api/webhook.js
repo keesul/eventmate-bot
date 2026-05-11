@@ -1,13 +1,44 @@
-import { Telegraf, Markup } from 'telegraf';
 import { createClient } from '@supabase/supabase-js';
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-// Telegram webhook handler
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const WEBAPP_URL = process.env.WEBAPP_URL;
+
+// Helper to send Telegram messages
+async function sendMessage(chatId, text, replyMarkup = null) {
+  const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+  const body = {
+    chat_id: chatId,
+    text: text,
+    parse_mode: 'HTML'
+  };
+
+  if (replyMarkup) {
+    body.reply_markup = replyMarkup;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  return response.json();
+}
+
+async function answerCallbackQuery(callbackQueryId) {
+  const url = `https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`;
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ callback_query_id: callbackQueryId })
+  });
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -33,7 +64,7 @@ export default async function handler(req, res) {
           onConflict: 'telegram_id'
         });
 
-      await bot.telegram.sendMessage(
+      await sendMessage(
         userId,
         `👋 Привіт, ${firstName}!\n\n` +
         `🎉 EventMate — твій особистий помічник для управління подіями!\n\n` +
@@ -43,11 +74,13 @@ export default async function handler(req, res) {
         `🎊 Подія\n\n` +
         `✨ Отримуй нагадування вчасно!\n` +
         `📱 Зручний інтерфейс Mini App`,
-        Markup.inlineKeyboard([
-          [Markup.button.webApp('📅 Відкрити EventMate', process.env.WEBAPP_URL)],
-          [Markup.button.callback('📋 Мої події', 'my_events')],
-          [Markup.button.callback('ℹ️ Допомога', 'help')]
-        ])
+        {
+          inline_keyboard: [
+            [{ text: '📅 Відкрити EventMate', web_app: { url: WEBAPP_URL } }],
+            [{ text: '📋 Мої події', callback_data: 'my_events' }],
+            [{ text: 'ℹ️ Допомога', callback_data: 'help' }]
+          ]
+        }
       );
     }
 
@@ -56,7 +89,7 @@ export default async function handler(req, res) {
       const callbackData = update.callback_query.data;
       const userId = update.callback_query.from.id;
 
-      await bot.telegram.answerCbQuery(update.callback_query.id);
+      await answerCallbackQuery(update.callback_query.id);
 
       if (callbackData === 'my_events') {
         const { data: events } = await supabase
@@ -66,12 +99,14 @@ export default async function handler(req, res) {
           .order('event_date', { ascending: true });
 
         if (!events || events.length === 0) {
-          await bot.telegram.sendMessage(
+          await sendMessage(
             userId,
             '📭 У вас поки немає подій.\n\nСтворіть свою першу подію!',
-            Markup.inlineKeyboard([
-              [Markup.button.webApp('➕ Створити подію', process.env.WEBAPP_URL)]
-            ])
+            {
+              inline_keyboard: [
+                [{ text: '➕ Створити подію', web_app: { url: WEBAPP_URL } }]
+              ]
+            }
           );
         } else {
           let message = '📋 Ваші події:\n\n';
@@ -86,18 +121,20 @@ export default async function handler(req, res) {
             message += '\n\n';
           });
 
-          await bot.telegram.sendMessage(
+          await sendMessage(
             userId,
             message,
-            Markup.inlineKeyboard([
-              [Markup.button.webApp('📅 Відкрити EventMate', process.env.WEBAPP_URL)]
-            ])
+            {
+              inline_keyboard: [
+                [{ text: '📅 Відкрити EventMate', web_app: { url: WEBAPP_URL } }]
+              ]
+            }
           );
         }
       }
 
       if (callbackData === 'help') {
-        await bot.telegram.sendMessage(
+        await sendMessage(
           userId,
           `📖 Як користуватися EventMate:\n\n` +
           `1️⃣ Натисніть "Відкрити EventMate"\n` +
@@ -109,9 +146,11 @@ export default async function handler(req, res) {
           `• В день події\n\n` +
           `🔔 Команди:\n` +
           `/start - Головне меню`,
-          Markup.inlineKeyboard([
-            [Markup.button.webApp('📅 Відкрити EventMate', process.env.WEBAPP_URL)]
-          ])
+          {
+            inline_keyboard: [
+              [{ text: '📅 Відкрити EventMate', web_app: { url: WEBAPP_URL } }]
+            ]
+          }
         );
       }
     }
