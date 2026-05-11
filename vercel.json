@@ -6,26 +6,26 @@
       "use": "@vercel/static"
     },
     {
-      "src": "api/**/*.cjs",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/test-env",
-      "dest": "/api/test-env.cjs"
+      "dest": "/api/test-env.js"
     },
     {
       "src": "/api/webhook",
-      "dest": "/api/webhook.cjs"
+      "dest": "/api/webhook.js"
     },
     {
       "src": "/api/events/(.*)",
-      "dest": "/api/events/[...params].cjs"
+      "dest": "/api/events/[...params].js"
     },
     {
       "src": "/api/events",
-      "dest": "/api/events/[...params].cjs"
+      "dest": "/api/events/[...params].js"
     },
     {
       "src": "/(.*)",
