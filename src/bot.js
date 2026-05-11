@@ -34,61 +34,71 @@ function log(message, data = {}) {
 }
 
 // Start command
-bot.start((ctx) => {
-  const userId = ctx.from.id;
-  const username = ctx.from.username || '';
-  const firstName = ctx.from.first_name || '';
+bot.start(async (ctx) => {
+  try {
+    const userId = ctx.from.id;
+    const username = ctx.from.username || '';
+    const firstName = ctx.from.first_name || '';
 
-  dbQueries.createUser.run(userId, username, firstName);
-  log('👤 Новий користувач', { userId, username, firstName });
+    await dbQueries.createUser(userId, username, firstName);
+    log('👤 Новий користувач', { userId, username, firstName });
 
-  ctx.reply(
-    `👋 Привіт, ${firstName}!\n\n` +
-    `🎉 EventMate — твій особистий помічник для управління подіями!\n\n` +
-    `📅 Створюй події трьох типів:\n` +
-    `🎂 День народження\n` +
-    `⏰ Нагадування\n` +
-    `🎊 Подія\n\n` +
-    `✨ Отримуй нагадування вчасно!\n` +
-    `📱 Зручний інтерфейс Mini App`,
-    Markup.inlineKeyboard([
-      [Markup.button.webApp('📅 Відкрити EventMate', process.env.WEBAPP_URL)],
-      [Markup.button.callback('📋 Мої події', 'my_events')],
-      [Markup.button.callback('ℹ️ Допомога', 'help')]
-    ])
-  );
+    ctx.reply(
+      `👋 Привіт, ${firstName}!\n\n` +
+      `🎉 EventMate — твій особистий помічник для управління подіями!\n\n` +
+      `📅 Створюй події трьох типів:\n` +
+      `🎂 День народження\n` +
+      `⏰ Нагадування\n` +
+      `🎊 Подія\n\n` +
+      `✨ Отримуй нагадування вчасно!\n` +
+      `📱 Зручний інтерфейс Mini App`,
+      Markup.inlineKeyboard([
+        [Markup.button.webApp('📅 Відкрити EventMate', process.env.WEBAPP_URL)],
+        [Markup.button.callback('📋 Мої події', 'my_events')],
+        [Markup.button.callback('ℹ️ Допомога', 'help')]
+      ])
+    );
+  } catch (err) {
+    log('❌ Помилка start', { error: err.message });
+    ctx.reply('❌ Виникла помилка. Спробуйте ще раз.');
+  }
 });
 
 // Callback handlers
 bot.action('my_events', async (ctx) => {
-  await ctx.answerCbQuery();
-  const events = dbQueries.getUserEvents.all(ctx.from.id);
+  try {
+    await ctx.answerCbQuery();
+    const events = await dbQueries.getUserEvents(ctx.from.id);
 
-  if (events.length === 0) {
-    ctx.reply(
-      '📭 У вас поки немає подій.\n\nСтворіть свою першу подію!',
-      Markup.inlineKeyboard([
-        [Markup.button.webApp('➕ Створити подію', process.env.WEBAPP_URL)]
-      ])
-    );
-    return;
-  }
-
-  let message = '📋 Ваші події:\n\n';
-  events.forEach((event, index) => {
-    const emoji = event.type === 'birthday' ? '🎂' : event.type === 'reminder' ? '⏰' : '🎊';
-    const date = format(parse(event.event_date, 'yyyy-MM-dd', new Date()), 'd MMMM yyyy', { locale: uk });
-    message += `${emoji} ${event.title}\n`;
-    message += `📅 ${date}`;
-    if (event.event_time) {
-      message += ` о ${event.event_time}`;
+    if (events.length === 0) {
+      ctx.reply(
+        '📭 У вас поки немає подій.\n\nСтворіть свою першу подію!',
+        Markup.inlineKeyboard([
+          [Markup.button.webApp('➕ Створити подію', process.env.WEBAPP_URL)]
+        ])
+      );
+      return;
     }
-    message += '\n\n';
-  });
 
-  ctx.reply(message, Markup.inlineKeyboard([
-    [Markup.button.webApp('📅 Відкрити EventMate', process.env.WEBAPP_URL)]
-  ]));
+    let message = '📋 Ваші події:\n\n';
+    events.forEach((event) => {
+      const emoji = event.type === 'birthday' ? '🎂' : event.type === 'reminder' ? '⏰' : '🎊';
+      const date = format(parse(event.event_date, 'yyyy-MM-dd', new Date()), 'd MMMM yyyy', { locale: uk });
+      message += `${emoji} ${event.title}\n`;
+      message += `📅 ${date}`;
+      if (event.event_time) {
+        message += ` о ${event.event_time}`;
+      }
+      message += '\n\n';
+    });
+
+    ctx.reply(message, Markup.inlineKeyboard([
+      [Markup.button.webApp('📅 Відкрити EventMate', process.env.WEBAPP_URL)]
+    ]));
+  } catch (err) {
+    log('❌ Помилка my_events', { error: err.message });
+    ctx.reply('❌ Виникла помилка. Спробуйте ще раз.');
+  }
 });
 
 bot.action('help', async (ctx) => {
@@ -120,7 +130,7 @@ bot.on('web_app_data', async (ctx) => {
     if (data.action === 'create_event') {
       const { title, type, date, time, notes } = data;
 
-      const result = dbQueries.createEvent.run(
+      const result = await dbQueries.createEvent(
         ctx.from.id,
         title,
         type,
@@ -144,13 +154,13 @@ bot.on('web_app_data', async (ctx) => {
         ])
       );
 
-      log('✅ Створено подію', { eventId: result.lastInsertRowid, userId: ctx.from.id });
+      log('✅ Створено подію', { eventId: result.id, userId: ctx.from.id });
     }
 
     if (data.action === 'update_event') {
       const { id, title, type, date, time, notes } = data;
 
-      dbQueries.updateEvent.run(title, type, date, time || null, notes || null, id, ctx.from.id);
+      await dbQueries.updateEvent(title, type, date, time || null, notes || null, id, ctx.from.id);
 
       await ctx.reply('✅ Подію оновлено!');
       log('✅ Оновлено подію', { eventId: id, userId: ctx.from.id });
@@ -159,7 +169,7 @@ bot.on('web_app_data', async (ctx) => {
     if (data.action === 'delete_event') {
       const { id } = data;
 
-      dbQueries.deleteEvent.run(id, ctx.from.id);
+      await dbQueries.deleteEvent(id, ctx.from.id);
 
       await ctx.reply('🗑 Подію видалено');
       log('🗑 Видалено подію', { eventId: id, userId: ctx.from.id });
@@ -171,10 +181,10 @@ bot.on('web_app_data', async (ctx) => {
 });
 
 // HTTP API для Mini App
-app.get('/api/events/:userId', (req, res) => {
+app.get('/api/events/:userId', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
-    const events = dbQueries.getUserEvents.all(userId);
+    const events = await dbQueries.getUserEvents(userId);
     res.json({ success: true, events });
   } catch (err) {
     log('❌ Помилка API /events', { error: err.message });
@@ -182,26 +192,26 @@ app.get('/api/events/:userId', (req, res) => {
   }
 });
 
-app.post('/api/events', (req, res) => {
+app.post('/api/events', async (req, res) => {
   try {
     const { userId, title, type, date, time, notes } = req.body;
 
-    const result = dbQueries.createEvent.run(userId, title, type, date, time || null, notes || null);
+    const result = await dbQueries.createEvent(userId, title, type, date, time || null, notes || null);
 
-    log('✅ HTTP створення події', { eventId: result.lastInsertRowid, userId });
-    res.json({ success: true, eventId: result.lastInsertRowid });
+    log('✅ HTTP створення події', { eventId: result.id, userId });
+    res.json({ success: true, eventId: result.id });
   } catch (err) {
     log('❌ Помилка API створення події', { error: err.message });
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.put('/api/events/:id', (req, res) => {
+app.put('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { userId, title, type, date, time, notes } = req.body;
 
-    dbQueries.updateEvent.run(title, type, date, time || null, notes || null, id, userId);
+    await dbQueries.updateEvent(title, type, date, time || null, notes || null, id, userId);
 
     log('✅ HTTP оновлення події', { eventId: id, userId });
     res.json({ success: true });
@@ -211,12 +221,12 @@ app.put('/api/events/:id', (req, res) => {
   }
 });
 
-app.delete('/api/events/:id', (req, res) => {
+app.delete('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.body;
 
-    dbQueries.deleteEvent.run(id, userId);
+    await dbQueries.deleteEvent(id, userId);
 
     log('🗑 HTTP видалення події', { eventId: id, userId });
     res.json({ success: true });
@@ -231,38 +241,42 @@ cron.schedule('0 9 * * *', async () => {
   const today = format(new Date(), 'yyyy-MM-dd');
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
 
-  // Нагадування на сьогодні
-  const todayEvents = dbQueries.getUpcomingEvents.all(today);
-  for (const event of todayEvents) {
-    try {
-      const emoji = event.type === 'birthday' ? '🎂' : event.type === 'reminder' ? '⏰' : '🎊';
-      await bot.telegram.sendMessage(
-        event.telegram_id,
-        `🔔 Сьогодні!\n\n${emoji} ${event.title}` +
-        (event.event_time ? `\n⏰ ${event.event_time}` : '') +
-        (event.notes ? `\n📝 ${event.notes}` : '')
-      );
-      log('🔔 Відправлено нагадування (сьогодні)', { eventId: event.id, userId: event.telegram_id });
-    } catch (err) {
-      log('❌ Помилка відправки нагадування', { error: err.message, eventId: event.id });
+  try {
+    // Нагадування на сьогодні
+    const todayEvents = await dbQueries.getUpcomingEvents(today);
+    for (const event of todayEvents) {
+      try {
+        const emoji = event.type === 'birthday' ? '🎂' : event.type === 'reminder' ? '⏰' : '🎊';
+        await bot.telegram.sendMessage(
+          event.telegram_id,
+          `🔔 Сьогодні!\n\n${emoji} ${event.title}` +
+          (event.event_time ? `\n⏰ ${event.event_time}` : '') +
+          (event.notes ? `\n📝 ${event.notes}` : '')
+        );
+        log('🔔 Відправлено нагадування (сьогодні)', { eventId: event.id, userId: event.telegram_id });
+      } catch (err) {
+        log('❌ Помилка відправки нагадування', { error: err.message, eventId: event.id });
+      }
     }
-  }
 
-  // Нагадування на завтра
-  const tomorrowEvents = dbQueries.getUpcomingEvents.all(tomorrow);
-  for (const event of tomorrowEvents) {
-    try {
-      const emoji = event.type === 'birthday' ? '🎂' : event.type === 'reminder' ? '⏰' : '🎊';
-      await bot.telegram.sendMessage(
-        event.telegram_id,
-        `🔔 Нагадування!\n\nЗавтра:\n${emoji} ${event.title}` +
-        (event.event_time ? `\n⏰ ${event.event_time}` : '') +
-        (event.notes ? `\n📝 ${event.notes}` : '')
-      );
-      log('🔔 Відправлено нагадування (завтра)', { eventId: event.id, userId: event.telegram_id });
-    } catch (err) {
-      log('❌ Помилка відправки нагадування', { error: err.message, eventId: event.id });
+    // Нагадування на завтра
+    const tomorrowEvents = await dbQueries.getUpcomingEvents(tomorrow);
+    for (const event of tomorrowEvents) {
+      try {
+        const emoji = event.type === 'birthday' ? '🎂' : event.type === 'reminder' ? '⏰' : '🎊';
+        await bot.telegram.sendMessage(
+          event.telegram_id,
+          `🔔 Нагадування!\n\nЗавтра:\n${emoji} ${event.title}` +
+          (event.event_time ? `\n⏰ ${event.event_time}` : '') +
+          (event.notes ? `\n📝 ${event.notes}` : '')
+        );
+        log('🔔 Відправлено нагадування (завтра)', { eventId: event.id, userId: event.telegram_id });
+      } catch (err) {
+        log('❌ Помилка відправки нагадування', { error: err.message, eventId: event.id });
+      }
     }
+  } catch (err) {
+    log('❌ Помилка cron job', { error: err.message });
   }
 });
 
@@ -285,6 +299,7 @@ bot.launch().then(() => {
   console.log('✅ EventMate бот запущено!');
   console.log(`📁 Логи: ${logFile}`);
   console.log(`🌐 Сервер: http://localhost:${PORT}`);
+  console.log(`💾 База даних: Supabase`);
 }).catch((err) => {
   log('❌ Помилка запуску', { error: err.message });
   console.error('❌ Помилка запуску:', err);

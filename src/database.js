@@ -1,85 +1,142 @@
-import Database from 'better-sqlite3';
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 
-const dbDir = './data';
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+dotenv.config();
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing Supabase credentials. Please set SUPABASE_URL and SUPABASE_ANON_KEY in .env');
 }
 
-const db = new Database(process.env.DATABASE_PATH || './data/events.db');
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Створення таблиць
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY,
-    telegram_id INTEGER UNIQUE NOT NULL,
-    username TEXT,
-    first_name TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    title TEXT NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('birthday', 'reminder', 'event')),
-    event_date TEXT NOT NULL,
-    event_time TEXT,
-    notes TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(telegram_id)
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_id);
-  CREATE INDEX IF NOT EXISTS idx_events_date ON events(event_date);
-`);
-
-// Prepared statements
+// Database queries
 export const dbQueries = {
   // Users
-  createUser: db.prepare(`
-    INSERT OR IGNORE INTO users (telegram_id, username, first_name)
-    VALUES (?, ?, ?)
-  `),
+  async createUser(telegramId, username, firstName) {
+    const { data, error } = await supabase
+      .from('users')
+      .upsert({
+        telegram_id: telegramId,
+        username: username,
+        first_name: firstName
+      }, {
+        onConflict: 'telegram_id'
+      })
+      .select()
+      .single();
 
-  getUser: db.prepare(`
-    SELECT * FROM users WHERE telegram_id = ?
-  `),
+    if (error) throw error;
+    return data;
+  },
+
+  async getUser(telegramId) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('telegram_id', telegramId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
+  },
 
   // Events
-  createEvent: db.prepare(`
-    INSERT INTO events (user_id, title, type, event_date, event_time, notes)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `),
+  async createEvent(userId, title, type, eventDate, eventTime, notes) {
+    const { data, error } = await supabase
+      .from('events')
+      .insert({
+        user_id: userId,
+        title: title,
+        type: type,
+        event_date: eventDate,
+        event_time: eventTime,
+        notes: notes
+      })
+      .select()
+      .single();
 
-  getUserEvents: db.prepare(`
-    SELECT * FROM events
-    WHERE user_id = ?
-    ORDER BY event_date ASC, event_time ASC
-  `),
+    if (error) throw error;
+    return data;
+  },
 
-  getEventById: db.prepare(`
-    SELECT * FROM events WHERE id = ?
-  `),
+  async getUserEvents(userId) {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('user_id', userId)
+      .order('event_date', { ascending: true })
+      .order('event_time', { ascending: true });
 
-  updateEvent: db.prepare(`
-    UPDATE events
-    SET title = ?, type = ?, event_date = ?, event_time = ?, notes = ?
-    WHERE id = ? AND user_id = ?
-  `),
+    if (error) throw error;
+    return data || [];
+  },
 
-  deleteEvent: db.prepare(`
-    DELETE FROM events WHERE id = ? AND user_id = ?
-  `),
+  async getEventById(eventId) {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .single();
 
-  getUpcomingEvents: db.prepare(`
-    SELECT e.*, u.telegram_id, u.first_name
-    FROM events e
-    JOIN users u ON e.user_id = u.telegram_id
-    WHERE e.event_date = ?
-    ORDER BY e.event_time ASC
-  `)
+    if (error) throw error;
+    return data;
+  },
+
+  async updateEvent(title, type, eventDate, eventTime, notes, eventId, userId) {
+    const { data, error } = await supabase
+      .from('events')
+      .update({
+        title: title,
+        type: type,
+        event_date: eventDate,
+        event_time: eventTime,
+        notes: notes
+      })
+      .eq('id', eventId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteEvent(eventId, userId) {
+    const { error } = await supabase
+      .from('events')
+      .delete()
+      .eq('id', eventId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    return true;
+  },
+
+  async getUpcomingEvents(date) {
+    const { data, error } = await supabase
+      .from('events')
+      .select(`
+        *,
+        users!inner (
+          telegram_id,
+          first_name
+        )
+      `)
+      .eq('event_date', date)
+      .order('event_time', { ascending: true });
+
+    if (error) throw error;
+
+    // Flatten the structure
+    return (data || []).map(event => ({
+      ...event,
+      telegram_id: event.users.telegram_id,
+      first_name: event.users.first_name
+    }));
+  }
 };
 
-export default db;
+export default supabase;
