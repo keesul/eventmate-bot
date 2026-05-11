@@ -25,8 +25,8 @@ const typeButtons = document.querySelectorAll('.type-btn');
 // Get user ID from Telegram
 const userId = tg.initDataUnsafe?.user?.id || 123456;
 
-// API Base URL
-const API_BASE_URL = 'https://eventmate-bot-production.up.railway.app';
+// API Base URL - same domain as Mini App
+const API_BASE_URL = '';
 
 // Utility functions
 function escapeHtml(text) {
