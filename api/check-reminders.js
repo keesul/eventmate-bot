@@ -94,8 +94,11 @@ module.exports = async function handler(req, res) {
           const reminderTime = event.reminder_time || '09:00';
           const reminderDays = event.reminder_days || 1;
 
+          // Нормалізуємо час нагадування (видаляємо секунди якщо є)
+          const normalizedReminderTime = reminderTime.substring(0, 5); // HH:MM
+
           // Перевіряємо, чи зараз час для нагадування
-          const shouldRemind = daysAhead === reminderDays && currentTime === reminderTime;
+          const shouldRemind = daysAhead === reminderDays && currentTime === normalizedReminderTime;
 
           if (!shouldRemind) continue;
 
