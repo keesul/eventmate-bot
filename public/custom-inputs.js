@@ -19,7 +19,10 @@ class CustomDatePicker {
     wrapper.appendChild(this.input);
 
     // Add click handler
-    this.input.addEventListener('click', () => this.open());
+    this.input.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.open();
+    });
     this.input.readOnly = true;
 
     // Set initial value if exists
@@ -83,7 +86,10 @@ class CustomDatePicker {
     });
 
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) this.close();
+      if (e.target === modal) {
+        e.stopPropagation();
+        this.close();
+      }
     });
 
     return modal;
@@ -241,7 +247,10 @@ class CustomTimePicker {
     this.input.parentNode.insertBefore(wrapper, this.input);
     wrapper.appendChild(this.input);
 
-    this.input.addEventListener('click', () => this.open());
+    this.input.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.open();
+    });
     this.input.readOnly = true;
 
     if (this.input.value) {
@@ -365,7 +374,10 @@ class CustomTimePicker {
     });
 
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) this.close();
+      if (e.target === modal) {
+        e.stopPropagation();
+        this.close();
+      }
     });
 
     return modal;
