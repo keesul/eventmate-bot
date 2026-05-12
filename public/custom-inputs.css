@@ -143,6 +143,7 @@ body[data-theme="dark"] .time-input {
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
 }
 
 .calendar-content {
@@ -153,6 +154,7 @@ body[data-theme="dark"] .time-input {
   max-width: 360px;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
 }
 
 body[data-theme="dark"] .calendar-content {
@@ -285,6 +287,7 @@ body[data-theme="dark"] .calendar-nav-btn:active {
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
 }
 
 .time-picker-content {
@@ -295,6 +298,7 @@ body[data-theme="dark"] .calendar-nav-btn:active {
   max-width: 300px;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
 }
 
 body[data-theme="dark"] .time-picker-content {
