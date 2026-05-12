@@ -35,7 +35,8 @@ async function getUpcomingEvents(date) {
       *,
       users!inner (
         telegram_id,
-        first_name
+        first_name,
+        timezone
       )
     `)
     .or(`and(is_recurring.eq.true,event_date.gte.1900-01-01),and(is_recurring.eq.false,event_date.eq.${date})`)
@@ -58,7 +59,8 @@ async function getUpcomingEvents(date) {
   return filtered.map(event => ({
     ...event,
     telegram_id: event.users.telegram_id,
-    first_name: event.users.first_name
+    first_name: event.users.first_name,
+    user_timezone: event.users.timezone || 'UTC'
   }));
 }
 
@@ -93,12 +95,19 @@ module.exports = async function handler(req, res) {
         try {
           const reminderTime = event.reminder_time || '09:00';
           const reminderDays = event.reminder_days || 1;
+          const userTimezone = event.user_timezone || 'UTC';
 
           // Нормалізуємо час нагадування (видаляємо секунди якщо є)
           const normalizedReminderTime = reminderTime.substring(0, 5); // HH:MM
 
-          // Перевіряємо, чи зараз час для нагадування
-          const shouldRemind = daysAhead === reminderDays && currentTime === normalizedReminderTime;
+          // Конвертуємо поточний UTC час в timezone користувача
+          const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+          const userHour = userTime.getHours();
+          const userMinute = userTime.getMinutes();
+          const userCurrentTime = `${String(userHour).padStart(2, '0')}:${String(userMinute).padStart(2, '0')}`;
+
+          // Перевіряємо, чи зараз час для нагадування в timezone користувача
+          const shouldRemind = daysAhead === reminderDays && userCurrentTime === normalizedReminderTime;
 
           if (!shouldRemind) continue;
 

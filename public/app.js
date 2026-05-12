@@ -22,8 +22,13 @@ const deleteBtn = document.getElementById('deleteBtn');
 const tabs = document.querySelectorAll('.tab');
 const typeButtons = document.querySelectorAll('.type-btn');
 
-// Get user ID from Telegram
+// Get user ID and timezone from Telegram
 const userId = tg.initDataUnsafe?.user?.id || 123456;
+const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const timezoneOffset = new Date().getTimezoneOffset(); // minutes
+
+console.log('User timezone:', userTimezone);
+console.log('Timezone offset:', timezoneOffset, 'minutes');
 
 // API Base URL - same domain as Mini App
 const API_BASE_URL = '';
@@ -46,6 +51,9 @@ function createElement(tag, className, content) {
 init();
 
 async function init() {
+  // Update user timezone
+  await updateUserTimezone();
+
   await loadEvents();
   setupEventListeners();
   renderEvents();
@@ -53,6 +61,22 @@ async function init() {
   // Set min date to today
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('date').setAttribute('min', today);
+}
+
+async function updateUserTimezone() {
+  try {
+    await fetch(`${API_BASE_URL}/api/update-timezone`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: userId,
+        timezone: userTimezone
+      })
+    });
+    console.log('Timezone updated:', userTimezone);
+  } catch (err) {
+    console.error('Error updating timezone:', err);
+  }
 }
 
 function setupEventListeners() {

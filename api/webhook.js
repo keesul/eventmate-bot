@@ -53,13 +53,14 @@ module.exports = async function handler(req, res) {
       const username = update.message.from.username || '';
       const firstName = update.message.from.first_name || '';
 
-      // Create user in database
+      // Create user in database with default timezone (will be updated from Mini App)
       await supabase
         .from('users')
         .upsert({
           telegram_id: userId,
           username: username,
-          first_name: firstName
+          first_name: firstName,
+          timezone: 'UTC' // Default, will be updated from Mini App
         }, {
           onConflict: 'telegram_id'
         });
