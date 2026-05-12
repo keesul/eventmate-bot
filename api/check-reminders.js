@@ -112,8 +112,21 @@ module.exports = async function handler(req, res) {
           });
           const userCurrentTime = userTimeString.replace(/^(\d{2}):(\d{2}).*/, '$1:$2');
 
-          // Перевіряємо, чи зараз час для нагадування в timezone користувача
-          const shouldRemind = daysAhead === reminderDays && userCurrentTime === normalizedReminderTime;
+          // Розраховуємо daysAhead в timezone користувача
+          const userDateString = now.toLocaleString('en-US', {
+            timeZone: userTimezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          });
+          const [userMonth, userDay, userYear] = userDateString.split('/');
+          const userToday = new Date(Date.UTC(parseInt(userYear), parseInt(userMonth) - 1, parseInt(userDay)));
+
+          const eventDateUTC = new Date(event.event_date + 'T00:00:00Z');
+          const daysUntilEvent = Math.ceil((eventDateUTC - userToday) / (1000 * 60 * 60 * 24));
+
+          // Перевіряємо, чи зараз час для нагадування
+          const shouldRemind = daysUntilEvent === reminderDays && userCurrentTime === normalizedReminderTime;
 
           if (!shouldRemind) continue;
 
