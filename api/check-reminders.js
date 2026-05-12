@@ -101,10 +101,13 @@ module.exports = async function handler(req, res) {
           const normalizedReminderTime = reminderTime.substring(0, 5); // HH:MM
 
           // Конвертуємо поточний UTC час в timezone користувача
-          const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
-          const userHour = userTime.getHours();
-          const userMinute = userTime.getMinutes();
-          const userCurrentTime = `${String(userHour).padStart(2, '0')}:${String(userMinute).padStart(2, '0')}`;
+          const userTimeString = now.toLocaleString('en-US', {
+            timeZone: userTimezone,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+          const userCurrentTime = userTimeString.replace(/^(\d{2}):(\d{2}).*/, '$1:$2');
 
           // Перевіряємо, чи зараз час для нагадування в timezone користувача
           const shouldRemind = daysAhead === reminderDays && userCurrentTime === normalizedReminderTime;
