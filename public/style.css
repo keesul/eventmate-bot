@@ -72,7 +72,7 @@ body {
   max-width: 100%;
   min-height: 100vh;
   padding: 0;
-  background: var(--tg-theme-bg-color, var(--surface-secondary));
+  background: var(--tg-theme-bg-color, var(--surface));
 }
 
 /* Header */
