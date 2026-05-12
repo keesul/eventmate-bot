@@ -67,21 +67,7 @@ module.exports = async function handler(req, res) {
 
       await sendMessage(
         userId,
-        `👋 Привіт, ${firstName}!\n\n` +
-        `🎉 EventMate — твій особистий помічник для управління подіями!\n\n` +
-        `📅 Створюй події трьох типів:\n` +
-        `🎂 День народження\n` +
-        `⏰ Нагадування\n` +
-        `🎊 Подія\n\n` +
-        `✨ Отримуй нагадування вчасно!\n` +
-        `📱 Зручний інтерфейс Mini App`,
-        {
-          inline_keyboard: [
-            [{ text: '📅 Відкрити EventMate', web_app: { url: WEBAPP_URL } }],
-            [{ text: '📋 Мої події', callback_data: 'my_events' }],
-            [{ text: 'ℹ️ Допомога', callback_data: 'help' }]
-          ]
-        }
+        `darova chelik`
       );
     }
 
