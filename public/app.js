@@ -112,52 +112,11 @@ async function loadEvents() {
     const data = await response.json();
     if (data.success) {
       events = data.events || [];
-
-      // Add demo events if empty
-      if (events.length === 0) {
-        events = getDemoEvents();
-      }
     }
   } catch (err) {
     console.error('Error loading events:', err);
-    events = getDemoEvents();
+    events = [];
   }
-}
-
-function getDemoEvents() {
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const nextWeek = new Date(today);
-  nextWeek.setDate(nextWeek.getDate() + 7);
-
-  return [
-    {
-      id: 1,
-      title: 'День народження Марії',
-      type: 'birthday',
-      event_date: tomorrow.toISOString().split('T')[0],
-      event_time: '18:00',
-      notes: 'Не забути купити подарунок!'
-    },
-    {
-      id: 2,
-      title: 'Зустріч з клієнтом',
-      type: 'reminder',
-      event_date: today.toISOString().split('T')[0],
-      event_time: '14:00',
-      notes: 'Підготувати презентацію'
-    },
-    {
-      id: 3,
-      title: 'Концерт улюбленої групи',
-      type: 'event',
-      event_date: nextWeek.toISOString().split('T')[0],
-      event_time: '20:00',
-      notes: 'Квитки вже куплені'
-    }
-  ];
 }
 
 function renderEvents() {
