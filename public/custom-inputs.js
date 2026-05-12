@@ -77,6 +77,11 @@ class CustomDatePicker {
     content.appendChild(days);
     modal.appendChild(content);
 
+    // Prevent clicks on content from closing modal
+    content.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
     modal.addEventListener('click', (e) => {
       if (e.target === modal) this.close();
     });
@@ -353,6 +358,11 @@ class CustomTimePicker {
     content.appendChild(controls);
     content.appendChild(actions);
     modal.appendChild(content);
+
+    // Prevent clicks on content from closing modal
+    content.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
 
     modal.addEventListener('click', (e) => {
       if (e.target === modal) this.close();
