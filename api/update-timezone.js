@@ -17,6 +17,21 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Missing userId or timezone' });
     }
 
+    // Validate timezone
+    try {
+      const validTimezones = Intl.supportedValuesOf('timeZone');
+      if (!validTimezones.includes(timezone)) {
+        return res.status(400).json({ error: 'Invalid timezone' });
+      }
+    } catch (e) {
+      // Fallback validation - try to use the timezone
+      try {
+        new Date().toLocaleString('en-US', { timeZone: timezone });
+      } catch (tzError) {
+        return res.status(400).json({ error: 'Invalid timezone' });
+      }
+    }
+
     // Update user timezone
     const { error } = await supabase
       .from('users')
@@ -28,6 +43,6 @@ module.exports = async function handler(req, res) {
     res.status(200).json({ success: true });
   } catch (error) {
     console.error('Update timezone error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 };

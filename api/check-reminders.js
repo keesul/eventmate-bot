@@ -166,7 +166,7 @@ module.exports = async function handler(req, res) {
     console.error('❌ Cron job error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Server error'
     });
   }
 };
