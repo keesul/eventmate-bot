@@ -134,6 +134,9 @@ async function init() {
   // Apply theme
   applyTheme();
 
+  // Apply language to UI
+  updateUILanguage();
+
   // Update user timezone
   await updateUserTimezone();
 
