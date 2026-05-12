@@ -468,7 +468,8 @@ async function handleSubmit(e) {
     notes: document.getElementById('notes').value.trim(),
     reminderDays: parseInt(document.getElementById('reminderDays').value) || 1,
     reminderTime: document.getElementById('reminderTime').value || '09:00',
-    birthYear: selectedType === 'birthday' ? (parseInt(document.getElementById('birthYear').value) || null) : null
+    birthYear: selectedType === 'birthday' ? (parseInt(document.getElementById('birthYear').value) || null) : null,
+    isRecurring: selectedType === 'birthday' // Birthdays repeat every year
   };
 
   if (!formData.title || !formData.date) {

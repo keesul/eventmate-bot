@@ -128,8 +128,27 @@ module.exports = async function handler(req, res) {
           const [userMonth, userDay, userYear] = userDateString.split('/');
           const userToday = new Date(Date.UTC(parseInt(userYear), parseInt(userMonth) - 1, parseInt(userDay)));
 
-          const eventDateUTC = new Date(event.event_date + 'T00:00:00Z');
-          const daysUntilEvent = Math.ceil((eventDateUTC - userToday) / (1000 * 60 * 60 * 24));
+          // For birthdays (recurring events), calculate days until next occurrence this year or next year
+          let daysUntilEvent;
+          if (event.is_recurring && event.type === 'birthday') {
+            const eventDate = new Date(event.event_date);
+            const eventMonth = eventDate.getMonth();
+            const eventDay = eventDate.getDate();
+
+            // Create date for this year's birthday
+            const thisYearBirthday = new Date(Date.UTC(parseInt(userYear), eventMonth, eventDay));
+
+            // If birthday already passed this year, use next year
+            if (thisYearBirthday < userToday) {
+              const nextYearBirthday = new Date(Date.UTC(parseInt(userYear) + 1, eventMonth, eventDay));
+              daysUntilEvent = Math.ceil((nextYearBirthday - userToday) / (1000 * 60 * 60 * 24));
+            } else {
+              daysUntilEvent = Math.ceil((thisYearBirthday - userToday) / (1000 * 60 * 60 * 24));
+            }
+          } else {
+            const eventDateUTC = new Date(event.event_date + 'T00:00:00Z');
+            daysUntilEvent = Math.ceil((eventDateUTC - userToday) / (1000 * 60 * 60 * 24));
+          }
 
           // Перевіряємо, чи зараз час для нагадування
           const shouldRemind = daysUntilEvent === reminderDays && userCurrentTime === normalizedReminderTime;
@@ -155,7 +174,15 @@ module.exports = async function handler(req, res) {
 
           // Для днів народження показуємо вік
           if (event.type === 'birthday' && event.birth_year) {
-            const age = currentYear - event.birth_year;
+            // For birthdays, calculate age based on current year or next year
+            const eventDate = new Date(event.event_date);
+            const eventMonth = eventDate.getMonth();
+            const eventDay = eventDate.getDate();
+            const thisYearBirthday = new Date(Date.UTC(parseInt(userYear), eventMonth, eventDay));
+
+            // Determine which year's birthday we're celebrating
+            const celebrationYear = thisYearBirthday < userToday ? parseInt(userYear) + 1 : parseInt(userYear);
+            const age = celebrationYear - event.birth_year;
             message += `\n🎈 Виповнюється ${age} років`;
           }
 
