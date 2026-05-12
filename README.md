@@ -1,6 +1,6 @@
 # 🎉 EventMate — Telegram Mini App Bot
 
-Повнофункціональний Telegram бот з Mini App для управління подіями.
+Telegram бот з Mini App для управління подіями та автоматичними нагадуваннями.
 
 ## ✨ Функціонал
 
@@ -10,163 +10,76 @@
 - ✅ Сортування за найближчою датою
 - ✅ Зворотний відлік ("За 5 дн.", "Завтра", "Сьогодні 🎉")
 - ✅ Редагування та видалення подій
-- ✅ Збереження у SQLite базі даних
+- ✅ Збереження в Supabase
 - ✅ Тактильний зворотний зв'язок через Telegram API
 - ✅ Підтримка Telegram тем (dark/light)
-- ✅ Демо-дані при першому запуску
 
 ### Telegram Bot
-- ✅ Автоматичні нагадування (за день до події та в день події)
-- ✅ Команди: /start, /myevents
+- ✅ Автоматичні нагадування в зазначений час
+- ✅ Підтримка будь-якого часу (09:00, 09:30, 14:45 тощо)
+- ✅ Команди: /start
 - ✅ Inline кнопки для швидкого доступу
-- ✅ Логування всіх дій
+- ✅ Webhook для миттєвих відповідей
 
-## 🚀 Швидкий старт (локально)
+## 🚀 Архітектура
 
-### 1. Встановлення залежностей
+```
+┌─────────────────────────────────────────┐
+│ Vercel (Serverless)                     │
+│ ├─ api/webhook.js (Telegram bot)       │
+│ ├─ api/check-reminders.js (Cron)       │
+│ ├─ api/events.js (CRUD API)            │
+│ └─ public/ (Mini App)                   │
+└─────────────────────────────────────────┘
+         ↓
+┌─────────────────────────────────────────┐
+│ Supabase (Database)                     │
+│ ├─ users table                          │
+│ └─ events table                         │
+└─────────────────────────────────────────┘
+         ↓
+┌─────────────────────────────────────────┐
+│ cron-job.org (External Cron)            │
+│ └─ Викликає check-reminders щохвилини   │
+└─────────────────────────────────────────┘
+```
 
+## 📋 Деплой
+
+**Детальні інструкції:** [`VERCEL_DEPLOYMENT.md`](./VERCEL_DEPLOYMENT.md)
+
+### Швидкий старт
+
+1. **Встановіть Webhook:**
 ```bash
-cd /c/Users/kazmi/eventmate-bot
-npm install
+curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://eventmate-bot.vercel.app/api/webhook"}'
 ```
 
-### 2. Налаштування .env
+2. **Додайте змінні в Vercel:**
+   - `BOT_TOKEN`
+   - `WEBAPP_URL`
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `CRON_SECRET`
 
-Створіть бота через [@BotFather](https://t.me/BotFather) та отримайте токен.
-
-Відредагуйте файл `.env`:
-
-```env
-BOT_TOKEN=your_bot_token_here
-WEBAPP_URL=http://localhost:3000
-PORT=3000
-DATABASE_PATH=./data/events.db
-```
-
-### 3. Запуск
-
-```bash
-npm start
-```
-
-Або для розробки з автоперезавантаженням:
-
-```bash
-npm run dev
-```
-
-### 4. Налаштування Mini App в BotFather
-
-1. Відкрийте [@BotFather](https://t.me/BotFather)
-2. Виберіть `/mybots` → ваш бот → `Bot Settings` → `Menu Button`
-3. Вкажіть URL: `http://localhost:3000` (для локального тестування)
-4. Назва кнопки: `Відкрити EventMate`
-
-### 5. Тестування
-
-Відкрийте вашого бота в Telegram та натисніть кнопку меню або команду `/start`.
-
-## 🌐 Деплой на Railway
-
-### 1. Підготовка
-
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-```
-
-### 2. Деплой
-
-1. Зайдіть на [railway.app](https://railway.app)
-2. Натисніть `New Project` → `Deploy from GitHub repo`
-3. Виберіть ваш репозиторій
-4. Railway автоматично виявить `railway.json` та `Procfile`
-
-### 3. Налаштування змінних середовища
-
-В Railway Dashboard → Variables додайте:
-
-```
-BOT_TOKEN=your_bot_token_here
-WEBAPP_URL=https://your-app.railway.app
-PORT=3000
-DATABASE_PATH=./data/events.db
-```
-
-### 4. Оновлення Mini App URL
-
-Після деплою оновіть URL в BotFather:
-- `/mybots` → ваш бот → `Bot Settings` → `Menu Button`
-- URL: `https://your-app.railway.app`
-
-## 🎨 Деплой Mini App на Vercel (опціонально)
-
-Якщо хочете розділити бота та Mini App:
-
-### 1. Створіть vercel.json
-
-```json
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "webapp/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/webapp/$1"
-    }
-  ]
-}
-```
-
-### 2. Деплой
-
-```bash
-cd webapp
-vercel
-```
-
-### 3. Оновіть WEBAPP_URL
-
-В Railway змінних та в `.env` вкажіть Vercel URL.
-
-## 📁 Структура проекту
-
-```
-eventmate-bot/
-├── src/
-│   ├── bot.js          # Головний файл бота
-│   └── database.js     # База даних SQLite
-├── webapp/
-│   ├── index.html      # Mini App HTML
-│   ├── style.css       # Стилі
-│   └── app.js          # JavaScript логіка
-├── data/               # База даних (створюється автоматично)
-├── logs/               # Логи (створюється автоматично)
-├── .env                # Змінні середовища
-├── package.json
-├── railway.json        # Конфігурація Railway
-├── Procfile           # Команда запуску
-└── README.md
-```
+3. **Налаштуйте cron-job.org:**
+   - URL: `https://eventmate-bot.vercel.app/api/check-reminders`
+   - Schedule: Every minute (`* * * * *`)
+   - Header: `Authorization: Bearer <CRON_SECRET>`
 
 ## 🔧 Технології
 
-- **Backend**: Node.js, Telegraf, Express
-- **Database**: better-sqlite3
+- **Backend**: Vercel Serverless Functions
+- **Database**: Supabase (PostgreSQL)
 - **Frontend**: Vanilla JS, Telegram Web App API
-- **Deployment**: Railway, Vercel
-- **Cron**: node-cron (нагадування о 9:00 щодня)
+- **Cron**: cron-job.org (external)
+- **Deployment**: Vercel
 
 ## 📝 Команди бота
 
 - `/start` — Головне меню
-- `/myevents` — Список всіх подій
 - Inline кнопки:
   - 📅 Відкрити EventMate — відкриває Mini App
   - 📋 Мої події — показує список подій
@@ -174,58 +87,59 @@ eventmate-bot/
 
 ## 🔔 Нагадування
 
-Бот автоматично відправляє нагадування:
-- **За день до події** (о 9:00)
-- **В день події** (о 9:00)
+Бот автоматично відправляє нагадування в зазначений час:
+- Підтримка будь-якого часу (09:00, 09:30, 14:45 тощо)
+- Налаштовується при створенні події
+- Працює автономно через external cron
 
-Налаштування часу в `src/bot.js`:
+**Приклад:**
+- Подія: 15 травня 2026 о 18:00
+- Нагадати за: 1 день
+- Час нагадування: 14:30
+- Результат: 14 травня о 14:30 прийде повідомлення
 
-```javascript
-// Змініть '0 9 * * *' на потрібний час (формат cron)
-cron.schedule('0 9 * * *', async () => {
-  // ...
-});
+## 💰 Вартість
+
+**Безкоштовно (Free Tier):**
+- ✅ Vercel: 100GB bandwidth, 100 function invocations/day
+- ✅ Supabase: 500MB database, 2GB bandwidth
+- ✅ cron-job.org: Unlimited cron jobs
+
+## 📁 Структура проекту
+
+```
+eventmate-bot/
+├── api/
+│   ├── webhook.js           # Telegram bot webhook
+│   ├── check-reminders.js   # Cron endpoint
+│   ├── events.js            # CRUD API
+│   └── [id].js              # Dynamic routes
+├── public/
+│   ├── index.html           # Mini App
+│   ├── style.css            # Стилі
+│   └── app.js               # JavaScript логіка
+├── .env                     # Змінні середовища
+├── package.json
+├── vercel.json              # Vercel config
+├── VERCEL_DEPLOYMENT.md     # Інструкції деплою
+└── README.md
 ```
 
-## 🐛 Логування
+## 🐛 Troubleshooting
 
-Всі дії логуються в `logs/bot-YYYY-MM-DD.log`:
-- Створення користувачів
-- Створення/редагування/видалення подій
-- Відправка нагадувань
-- Помилки
-
-## 🔒 Безпека
-
-- `.env` файл в `.gitignore`
-- База даних в `.gitignore`
-- Логи в `.gitignore`
-- Валідація даних на сервері
-
-## 📱 Тестування локально через ngrok
-
-Для тестування Mini App локально з реальним Telegram:
-
+### Webhook не працює
 ```bash
-# Встановіть ngrok
-npm install -g ngrok
-
-# Запустіть бота
-npm start
-
-# В іншому терміналі
-ngrok http 3000
+curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
 ```
 
-Використайте ngrok URL в BotFather для Menu Button.
-
-## 🎯 Наступні кроки
-
-- [ ] Додати повторювані події (щорічні дні народження)
-- [ ] Експорт подій в календар
-- [ ] Групові події
-- [ ] Кастомні нагадування (за 1 годину, за тиждень)
-- [ ] Інтеграція з Google Calendar
+### Нагадування не приходять
+1. Перевірте Vercel Function Logs
+2. Перевірте cron-job.org execution history
+3. Викличте `/api/check-reminders` вручну:
+```bash
+curl -H "Authorization: Bearer <CRON_SECRET>" \
+     https://eventmate-bot.vercel.app/api/check-reminders
+```
 
 ## 📄 Ліцензія
 
@@ -234,3 +148,7 @@ MIT
 ## 👨‍💻 Автор
 
 Створено для управління особистими подіями через Telegram.
+
+---
+
+**Повні інструкції з деплою:** [`VERCEL_DEPLOYMENT.md`](./VERCEL_DEPLOYMENT.md)
