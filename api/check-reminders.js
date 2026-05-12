@@ -75,8 +75,8 @@ module.exports = async function handler(req, res) {
 
   try {
     const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
+    const currentHour = now.getUTCHours();
+    const currentMinute = now.getUTCMinutes();
     const currentTime = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
 
     let sentCount = 0;
@@ -84,8 +84,11 @@ module.exports = async function handler(req, res) {
 
     // Перевіряємо події на найближчі 7 днів
     for (let daysAhead = 0; daysAhead <= 7; daysAhead++) {
-      const targetDate = new Date(now);
-      targetDate.setDate(targetDate.getDate() + daysAhead);
+      const targetDate = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() + daysAhead
+      ));
       const dateString = targetDate.toISOString().split('T')[0];
 
       const events = await getUpcomingEvents(dateString);
