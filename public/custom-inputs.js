@@ -333,12 +333,16 @@ class CustomTimePicker {
     const hoursScroll = document.createElement('div');
     hoursScroll.className = 'time-scroll-column';
     hoursScroll.dataset.type = 'hours';
-    for (let i = 0; i < 24; i++) {
-      const item = document.createElement('div');
-      item.className = 'time-scroll-item';
-      item.textContent = String(i).padStart(2, '0');
-      item.dataset.value = i;
-      hoursScroll.appendChild(item);
+
+    // Create 3 copies for infinite scroll
+    for (let copy = 0; copy < 3; copy++) {
+      for (let i = 0; i < 24; i++) {
+        const item = document.createElement('div');
+        item.className = 'time-scroll-item';
+        item.textContent = String(i).padStart(2, '0');
+        item.dataset.value = i;
+        hoursScroll.appendChild(item);
+      }
     }
     hoursWrapper.appendChild(hoursScroll);
 
@@ -352,12 +356,16 @@ class CustomTimePicker {
     const minutesScroll = document.createElement('div');
     minutesScroll.className = 'time-scroll-column';
     minutesScroll.dataset.type = 'minutes';
-    for (let i = 0; i < 60; i++) {
-      const item = document.createElement('div');
-      item.className = 'time-scroll-item';
-      item.textContent = String(i).padStart(2, '0');
-      item.dataset.value = i;
-      minutesScroll.appendChild(item);
+
+    // Create 3 copies for infinite scroll
+    for (let copy = 0; copy < 3; copy++) {
+      for (let i = 0; i < 60; i++) {
+        const item = document.createElement('div');
+        item.className = 'time-scroll-item';
+        item.textContent = String(i).padStart(2, '0');
+        item.dataset.value = i;
+        minutesScroll.appendChild(item);
+      }
     }
     minutesWrapper.appendChild(minutesScroll);
 
@@ -412,12 +420,26 @@ class CustomTimePicker {
 
   setupScrollPicker(column, type) {
     const itemHeight = 48;
+    const itemCount = type === 'hours' ? 24 : 60;
+    const totalItems = itemCount * 3; // 3 copies
     let startY = 0;
     let startScroll = 0;
     let isDragging = false;
 
     const updateSelection = () => {
       const scrollTop = column.scrollTop;
+      const totalHeight = itemCount * itemHeight;
+
+      // Check if we need to loop
+      if (scrollTop < itemHeight * 2) {
+        column.scrollTop = scrollTop + totalHeight;
+        return;
+      }
+      if (scrollTop > totalHeight * 2 - itemHeight * 2) {
+        column.scrollTop = scrollTop - totalHeight;
+        return;
+      }
+
       const index = Math.round(scrollTop / itemHeight);
       const value = parseInt(column.children[index]?.dataset.value || 0);
 
@@ -440,7 +462,7 @@ class CustomTimePicker {
         top: index * itemHeight,
         behavior: 'smooth'
       });
-      updateSelection();
+      setTimeout(updateSelection, 50);
     };
 
     column.addEventListener('touchstart', (e) => {
@@ -515,15 +537,19 @@ class CustomTimePicker {
     const minutesColumn = this.modal.querySelector('[data-type="minutes"]');
     const itemHeight = 48;
 
-    hoursColumn.scrollTop = this.hours * itemHeight;
-    minutesColumn.scrollTop = this.minutes * itemHeight;
+    // Scroll to middle copy (copy index 1)
+    hoursColumn.scrollTop = (24 + this.hours) * itemHeight;
+    minutesColumn.scrollTop = (60 + this.minutes) * itemHeight;
 
     // Update selected class
+    const hoursIndex = 24 + this.hours;
+    const minutesIndex = 60 + this.minutes;
+
     Array.from(hoursColumn.children).forEach((item, i) => {
-      item.classList.toggle('selected', i === this.hours);
+      item.classList.toggle('selected', i === hoursIndex);
     });
     Array.from(minutesColumn.children).forEach((item, i) => {
-      item.classList.toggle('selected', i === this.minutes);
+      item.classList.toggle('selected', i === minutesIndex);
     });
   }
 
