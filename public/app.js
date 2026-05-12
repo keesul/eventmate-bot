@@ -34,6 +34,82 @@ console.log('Timezone offset:', timezoneOffset, 'minutes');
 // API Base URL - same domain as Mini App
 const API_BASE_URL = '';
 
+// Translations
+const translations = {
+  uk: {
+    headerSubtitle: 'Ваші події завжди під контролем',
+    tabAll: 'Всі',
+    tabBirthdays: '🎂 Дні народження',
+    tabReminders: '⏰ Нагадування',
+    tabEvents: '🎊 Події',
+    modalTitleNew: 'Нова подія',
+    modalTitleEdit: 'Редагувати подію',
+    typeLabel: 'Тип події',
+    typeBirthday: 'День народження',
+    typeReminder: 'Нагадування',
+    typeEvent: 'Подія',
+    titleLabel: 'Назва події *',
+    titlePlaceholder: 'Наприклад: День народження Марії',
+    dateLabel: 'Дата *',
+    timeLabel: 'Час (необов\'язково)',
+    birthYearLabel: 'Рік народження (необов\'язково)',
+    birthYearHint: 'Для розрахунку віку в нагадуваннях',
+    reminderDaysLabel: 'Нагадати за',
+    reminderDays0: 'В день події',
+    reminderDays1: 'За 1 день',
+    reminderDays2: 'За 2 дні',
+    reminderDays3: 'За 3 дні',
+    reminderDays7: 'За тиждень',
+    reminderTimeLabel: 'Час нагадування',
+    reminderTimeHint: 'О котрій годині відправити нагадування',
+    notesLabel: 'Нотатки (необов\'язково)',
+    notesPlaceholder: 'Додаткова інформація про подію...',
+    btnSave: 'Зберегти',
+    btnCancel: 'Скасувати',
+    btnDelete: 'Видалити',
+    emptyStateText: 'Немає подій',
+    emptyStateHint: 'Натисніть + щоб додати нову подію'
+  },
+  en: {
+    headerSubtitle: 'Your events always under control',
+    tabAll: 'All',
+    tabBirthdays: '🎂 Birthdays',
+    tabReminders: '⏰ Reminders',
+    tabEvents: '🎊 Events',
+    modalTitleNew: 'New Event',
+    modalTitleEdit: 'Edit Event',
+    typeLabel: 'Event Type',
+    typeBirthday: 'Birthday',
+    typeReminder: 'Reminder',
+    typeEvent: 'Event',
+    titleLabel: 'Event Title *',
+    titlePlaceholder: 'For example: Maria\'s Birthday',
+    dateLabel: 'Date *',
+    timeLabel: 'Time (optional)',
+    birthYearLabel: 'Birth Year (optional)',
+    birthYearHint: 'For age calculation in reminders',
+    reminderDaysLabel: 'Remind',
+    reminderDays0: 'On event day',
+    reminderDays1: '1 day before',
+    reminderDays2: '2 days before',
+    reminderDays3: '3 days before',
+    reminderDays7: 'A week before',
+    reminderTimeLabel: 'Reminder Time',
+    reminderTimeHint: 'What time to send the reminder',
+    notesLabel: 'Notes (optional)',
+    notesPlaceholder: 'Additional information about the event...',
+    btnSave: 'Save',
+    btnCancel: 'Cancel',
+    btnDelete: 'Delete',
+    emptyStateText: 'No events',
+    emptyStateHint: 'Press + to add a new event'
+  }
+};
+
+function t(key) {
+  return translations[userSettings.language]?.[key] || translations['uk'][key];
+}
+
 // Utility functions
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -488,10 +564,24 @@ function applyTheme() {
 }
 
 async function toggleTheme() {
-  // Always keep light theme
-  userSettings.theme = 'light';
-  applyTheme();
-  tg.HapticFeedback.impactOccurred('light');
+  const newTheme = userSettings.theme === 'light' ? 'dark' : 'light';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, theme: newTheme })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      userSettings.theme = newTheme;
+      applyTheme();
+      tg.HapticFeedback.impactOccurred('medium');
+    }
+  } catch (err) {
+    console.error('Error updating theme:', err);
+  }
 }
 
 async function toggleLanguage() {
@@ -507,14 +597,45 @@ async function toggleLanguage() {
     const data = await response.json();
     if (data.success) {
       userSettings.language = newLang;
+      updateUILanguage();
       tg.HapticFeedback.impactOccurred('medium');
-      // No alert, just update silently
     } else {
       console.error('Failed to update language:', data.error);
     }
   } catch (err) {
     console.error('Error updating language:', err);
   }
+}
+
+function updateUILanguage() {
+  // Update header
+  document.querySelector('.header-subtitle').textContent = t('headerSubtitle');
+
+  // Update tabs
+  const tabsData = [
+    { type: 'all', key: 'tabAll' },
+    { type: 'birthday', key: 'tabBirthdays' },
+    { type: 'reminder', key: 'tabReminders' },
+    { type: 'event', key: 'tabEvents' }
+  ];
+
+  tabs.forEach((tab, i) => {
+    if (tabsData[i]) {
+      tab.textContent = t(tabsData[i].key);
+    }
+  });
+
+  // Update modal if open
+  if (modal.classList.contains('active')) {
+    if (editingEventId) {
+      modalTitle.textContent = t('modalTitleEdit');
+    } else {
+      modalTitle.textContent = t('modalTitleNew');
+    }
+  }
+
+  // Re-render events to update empty state text
+  renderEvents();
 }
 
 // Remove stats and export functions
