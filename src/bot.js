@@ -7,17 +7,25 @@ import { format, addDays, parse } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import express from 'express';
 import cors from 'cors';
-import cron from 'node-cron';
 
 dotenv.config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const app = express();
 
+// Webhook domain (Railway URL)
+const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN || `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` || 'http://localhost:3000';
+const WEBHOOK_PATH = '/webhook';
+
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('webapp'));
+app.use(express.static('public'));
+
+// Webhook endpoint
+app.post(WEBHOOK_PATH, (req, res) => {
+  bot.handleUpdate(req.body, res);
+});
 
 // Logging setup
 const logsDir = './logs';
@@ -290,28 +298,28 @@ app.delete('/api/events/:id', async (req, res) => {
   }
 });
 
-// Cron job для нагадувань (кожну годину перевіряємо)
-cron.schedule('0 * * * *', async () => {
+// Cron job для нагадувань (перевіряємо кожну хвилину)
+cron.schedule('* * * * *', async () => {
   const now = new Date();
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
+  const currentTime = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
 
   try {
-    // Перевіряємо події на сьогодні та найближчі дні
+    log('⏰ Перевірка нагадувань', { currentTime });
+
+    // Перевіряємо події на найближчі 7 днів
     for (let daysAhead = 0; daysAhead <= 7; daysAhead++) {
       const targetDate = format(addDays(now, daysAhead), 'yyyy-MM-dd');
       const events = await dbQueries.getUpcomingEvents(targetDate);
 
       for (const event of events) {
         try {
-          // Парсимо час нагадування
-          const [reminderHour, reminderMinute] = (event.reminder_time || '09:00').split(':').map(Number);
+          const reminderTime = event.reminder_time || '09:00';
           const reminderDays = event.reminder_days || 1;
 
           // Перевіряємо, чи зараз час для нагадування
-          const shouldRemind = daysAhead === reminderDays &&
-                               currentHour === reminderHour &&
-                               currentMinute === 0;
+          const shouldRemind = daysAhead === reminderDays && currentTime === reminderTime;
 
           if (!shouldRemind) continue;
 
@@ -347,8 +355,82 @@ cron.schedule('0 * * * *', async () => {
           log('🔔 Відправлено нагадування', {
             eventId: event.id,
             userId: event.telegram_id,
+            title: event.title,
             daysAhead,
-            reminderTime: event.reminder_time
+            reminderTime: event.reminder_time,
+            currentTime
+          });
+        } catch (err) {
+          log('❌ Помилка відправки нагадування', { error: err.message, eventId: event.id });
+        }
+      }
+    }
+  } catch (err) {
+    log('❌ Помилка cron job', { error: err.message });
+  }
+});
+
+// Cron job для нагадувань (перевіряємо кожну хвилину)
+cron.schedule('* * * * *', async () => {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const currentTime = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+
+  try {
+    log('⏰ Перевірка нагадувань', { currentTime });
+
+    // Перевіряємо події на найближчі 7 днів
+    for (let daysAhead = 0; daysAhead <= 7; daysAhead++) {
+      const targetDate = format(addDays(now, daysAhead), 'yyyy-MM-dd');
+      const events = await dbQueries.getUpcomingEvents(targetDate);
+
+      for (const event of events) {
+        try {
+          const reminderTime = event.reminder_time || '09:00';
+          const reminderDays = event.reminder_days || 1;
+
+          // Перевіряємо, чи зараз час для нагадування
+          const shouldRemind = daysAhead === reminderDays && currentTime === reminderTime;
+
+          if (!shouldRemind) continue;
+
+          const emoji = event.type === 'birthday' ? '🎂' : event.type === 'reminder' ? '⏰' : '🎊';
+          const eventDate = new Date(event.event_date);
+          const currentYear = now.getFullYear();
+
+          let message = '';
+
+          if (daysAhead === 0) {
+            message = `🔔 Сьогодні!\n\n${emoji} ${event.title}`;
+          } else if (daysAhead === 1) {
+            message = `🔔 Нагадування!\n\nЗавтра:\n${emoji} ${event.title}`;
+          } else {
+            message = `🔔 Нагадування!\n\nЧерез ${daysAhead} днів:\n${emoji} ${event.title}`;
+          }
+
+          if (event.event_time) {
+            message += `\n⏰ ${event.event_time}`;
+          }
+
+          // Для днів народження показуємо вік
+          if (event.type === 'birthday' && event.birth_year) {
+            const age = currentYear - event.birth_year;
+            message += `\n🎈 Виповнюється ${age} років`;
+          }
+
+          if (event.notes) {
+            message += `\n📝 ${event.notes}`;
+          }
+
+          await bot.telegram.sendMessage(event.telegram_id, message);
+          log('🔔 Відправлено нагадування', {
+            eventId: event.id,
+            userId: event.telegram_id,
+            title: event.title,
+            daysAhead,
+            reminderTime: event.reminder_time,
+            currentTime
           });
         } catch (err) {
           log('❌ Помилка відправки нагадування', { error: err.message, eventId: event.id });
@@ -373,25 +455,37 @@ bot.catch((err, ctx) => {
   console.error('Bot error:', err);
 });
 
-// Launch bot
-bot.launch().then(() => {
-  log('✅ Бот успішно запущено!');
-  console.log('✅ EventMate бот запущено!');
-  console.log(`📁 Логи: ${logFile}`);
-  console.log(`🌐 Сервер: http://localhost:${PORT}`);
+// Launch bot with webhook
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, async () => {
+  console.log(`🌐 HTTP сервер запущено на порту ${PORT}`);
+  log('🌐 HTTP сервер запущено', { port: PORT });
+
+  try {
+    // Set webhook
+    const webhookUrl = `${WEBHOOK_DOMAIN}${WEBHOOK_PATH}`;
+    await bot.telegram.setWebhook(webhookUrl);
+    console.log(`✅ Webhook встановлено: ${webhookUrl}`);
+    log('✅ Webhook встановлено', { url: webhookUrl });
+  } catch (err) {
+    console.error('❌ Помилка встановлення webhook:', err);
+    log('❌ Помилка встановлення webhook', { error: err.message });
+  }
+
   console.log(`💾 База даних: Supabase`);
-}).catch((err) => {
-  log('❌ Помилка запуску', { error: err.message });
-  console.error('❌ Помилка запуску:', err);
+  console.log(`📁 Логи: ${logFile}`);
 });
 
 // Graceful shutdown
-process.once('SIGINT', () => {
+process.once('SIGINT', async () => {
   log('🛑 Бот зупиняється (SIGINT)');
-  bot.stop('SIGINT');
+  await bot.telegram.deleteWebhook();
+  process.exit(0);
 });
 
-process.once('SIGTERM', () => {
+process.once('SIGTERM', async () => {
   log('🛑 Бот зупиняється (SIGTERM)');
-  bot.stop('SIGTERM');
+  await bot.telegram.deleteWebhook();
+  process.exit(0);
 });
