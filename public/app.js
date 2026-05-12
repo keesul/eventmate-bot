@@ -144,6 +144,11 @@ async function init() {
   setupEventListeners();
   renderEvents();
 
+  // Initialize custom inputs
+  if (window.initCustomInputs) {
+    window.initCustomInputs();
+  }
+
   // Set min date to today
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('date').setAttribute('min', today);
@@ -389,6 +394,11 @@ function openAddModal() {
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
   tg.HapticFeedback.impactOccurred('medium');
+
+  // Re-initialize custom inputs for modal
+  if (window.initCustomInputs) {
+    window.initCustomInputs();
+  }
 }
 
 function openEditModal(eventId) {
@@ -418,6 +428,11 @@ function openEditModal(eventId) {
   deleteBtn.style.display = 'block';
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
+
+  // Re-initialize custom inputs for modal
+  if (window.initCustomInputs) {
+    window.initCustomInputs();
+  }
 }
 
 function closeModalHandler() {
