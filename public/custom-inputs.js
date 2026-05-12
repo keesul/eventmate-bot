@@ -48,12 +48,18 @@ class CustomDatePicker {
     const prevBtn = document.createElement('button');
     prevBtn.className = 'calendar-nav-btn prev-month';
     prevBtn.textContent = '‹';
-    prevBtn.addEventListener('click', () => this.prevMonth());
+    prevBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.prevMonth();
+    });
 
     const nextBtn = document.createElement('button');
     nextBtn.className = 'calendar-nav-btn next-month';
     nextBtn.textContent = '›';
-    nextBtn.addEventListener('click', () => this.nextMonth());
+    nextBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.nextMonth();
+    });
 
     nav.appendChild(prevBtn);
     nav.appendChild(nextBtn);
@@ -181,7 +187,10 @@ class CustomDatePicker {
       btn.classList.add('selected');
     }
 
-    btn.addEventListener('click', () => this.selectDate(date));
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.selectDate(date);
+    });
 
     return btn;
   }
@@ -270,11 +279,17 @@ class CustomTimePicker {
     const hoursUp = document.createElement('button');
     hoursUp.className = 'time-picker-btn hours-up';
     hoursUp.textContent = '▲';
-    hoursUp.addEventListener('click', () => this.changeHours(1));
+    hoursUp.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.changeHours(1);
+    });
     const hoursDown = document.createElement('button');
     hoursDown.className = 'time-picker-btn hours-down';
     hoursDown.textContent = '▼';
-    hoursDown.addEventListener('click', () => this.changeHours(-1));
+    hoursDown.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.changeHours(-1);
+    });
     hoursCol.appendChild(hoursUp);
     hoursCol.appendChild(hoursDown);
 
@@ -283,11 +298,17 @@ class CustomTimePicker {
     const minutesUp = document.createElement('button');
     minutesUp.className = 'time-picker-btn minutes-up';
     minutesUp.textContent = '▲';
-    minutesUp.addEventListener('click', () => this.changeMinutes(5));
+    minutesUp.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.changeMinutes(5);
+    });
     const minutesDown = document.createElement('button');
     minutesDown.className = 'time-picker-btn minutes-down';
     minutesDown.textContent = '▼';
-    minutesDown.addEventListener('click', () => this.changeMinutes(-5));
+    minutesDown.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.changeMinutes(-5);
+    });
     minutesCol.appendChild(minutesUp);
     minutesCol.appendChild(minutesDown);
 
@@ -301,13 +322,19 @@ class CustomTimePicker {
     const cancelSpan = document.createElement('span');
     cancelSpan.textContent = window.t ? window.t('cancelBtn') : 'Скасувати';
     cancelBtn.appendChild(cancelSpan);
-    cancelBtn.addEventListener('click', () => this.close());
+    cancelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.close();
+    });
     const confirmBtn = document.createElement('button');
     confirmBtn.className = 'btn btn-primary confirm-time';
     const confirmSpan = document.createElement('span');
     confirmSpan.textContent = window.t ? window.t('confirmBtn') : 'Підтвердити';
     confirmBtn.appendChild(confirmSpan);
-    confirmBtn.addEventListener('click', () => this.confirm());
+    confirmBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.confirm();
+    });
     actions.appendChild(cancelBtn);
     actions.appendChild(confirmBtn);
 
