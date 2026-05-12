@@ -135,7 +135,7 @@ body[data-theme="dark"] .time-input {
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
-  z-index: 2000;
+  z-index: 10000;
   animation: fadeIn 0.3s;
 }
 
@@ -268,7 +268,7 @@ body[data-theme="dark"] .calendar-content {
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
-  z-index: 2000;
+  z-index: 10000;
   animation: fadeIn 0.3s;
 }
 

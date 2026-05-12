@@ -104,11 +104,12 @@
           <div class="form-group" id="birthYearGroup" style="display: block;">
             <label for="birthYear">Рік народження (необов'язково)</label>
             <input
-              type="number"
+              type="text"
               id="birthYear"
               placeholder="Наприклад: 1990"
-              min="1900"
-              max="2026"
+              maxlength="4"
+              inputmode="numeric"
+              pattern="[0-9]*"
             >
             <small style="color: var(--text-secondary); font-size: 12px; margin-top: 4px; display: block;">
               Для розрахунку віку в нагадуваннях

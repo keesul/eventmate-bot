@@ -53,6 +53,7 @@ const translations = {
     dateLabel: 'Дата *',
     timeLabel: 'Час (необов\'язково)',
     birthYearLabel: 'Рік народження (необов\'язково)',
+    birthYearPlaceholder: 'Наприклад: 1990',
     birthYearHint: 'Для розрахунку віку в нагадуваннях',
     reminderDaysLabel: 'Нагадати за',
     reminderDays0: 'В день події',
@@ -68,7 +69,11 @@ const translations = {
     btnCancel: 'Скасувати',
     btnDelete: 'Видалити',
     emptyStateText: 'Немає подій',
-    emptyStateHint: 'Натисніть + щоб додати нову подію'
+    emptyStateHint: 'Натисніть + щоб додати нову подію',
+    calendarTitle: 'Виберіть дату',
+    timePickerTitle: 'Виберіть час',
+    confirmBtn: 'Підтвердити',
+    cancelBtn: 'Скасувати'
   },
   en: {
     headerSubtitle: 'Your events always under control',
@@ -87,6 +92,7 @@ const translations = {
     dateLabel: 'Date *',
     timeLabel: 'Time (optional)',
     birthYearLabel: 'Birth Year (optional)',
+    birthYearPlaceholder: 'For example: 1990',
     birthYearHint: 'For age calculation in reminders',
     reminderDaysLabel: 'Remind',
     reminderDays0: 'On event day',
@@ -102,13 +108,20 @@ const translations = {
     btnCancel: 'Cancel',
     btnDelete: 'Delete',
     emptyStateText: 'No events',
-    emptyStateHint: 'Press + to add a new event'
+    emptyStateHint: 'Press + to add a new event',
+    calendarTitle: 'Select date',
+    timePickerTitle: 'Select time',
+    confirmBtn: 'Confirm',
+    cancelBtn: 'Cancel'
   }
 };
 
 function t(key) {
   return translations[userSettings.language]?.[key] || translations['uk'][key];
 }
+
+// Expose t function globally for custom inputs
+window.t = t;
 
 // Utility functions
 function escapeHtml(text) {
@@ -265,8 +278,8 @@ function renderEmptyState() {
   const emptyState = createElement('div', 'empty-state');
 
   const icon = createElement('div', 'empty-state-icon', '📭');
-  const text = createElement('div', 'empty-state-text', 'Немає подій');
-  const hint = createElement('div', 'empty-state-hint', 'Натисніть + щоб додати нову подію');
+  const text = createElement('div', 'empty-state-text', t('emptyStateText'));
+  const hint = createElement('div', 'empty-state-hint', t('emptyStateHint'));
 
   emptyState.appendChild(icon);
   emptyState.appendChild(text);
@@ -658,6 +671,66 @@ function updateUILanguage() {
       tab.textContent = t(tabsData[i].key);
     }
   });
+
+  // Update form labels
+  const labels = {
+    'typeLabel': document.querySelector('label[for="title"]')?.previousElementSibling?.previousElementSibling,
+    'titleLabel': document.querySelector('label[for="title"]'),
+    'dateLabel': document.querySelector('label[for="date"]'),
+    'timeLabel': document.querySelector('label[for="time"]'),
+    'birthYearLabel': document.querySelector('label[for="birthYear"]'),
+    'reminderDaysLabel': document.querySelector('label[for="reminderDays"]'),
+    'reminderTimeLabel': document.querySelector('label[for="reminderTime"]'),
+    'notesLabel': document.querySelector('label[for="notes"]')
+  };
+
+  Object.keys(labels).forEach(key => {
+    if (labels[key]) {
+      labels[key].textContent = t(key);
+    }
+  });
+
+  // Update placeholders
+  const titleInput = document.getElementById('title');
+  if (titleInput) titleInput.placeholder = t('titlePlaceholder');
+
+  const birthYearInput = document.getElementById('birthYear');
+  if (birthYearInput) birthYearInput.placeholder = t('birthYearPlaceholder');
+
+  const notesInput = document.getElementById('notes');
+  if (notesInput) notesInput.placeholder = t('notesPlaceholder');
+
+  // Update type buttons
+  const typeBtns = document.querySelectorAll('.type-btn');
+  typeBtns.forEach(btn => {
+    const type = btn.dataset.type;
+    const span = btn.querySelector('span:last-child');
+    if (span) {
+      if (type === 'birthday') span.textContent = t('typeBirthday');
+      if (type === 'reminder') span.textContent = t('typeReminder');
+      if (type === 'event') span.textContent = t('typeEvent');
+    }
+  });
+
+  // Update select options
+  const reminderDaysSelect = document.getElementById('reminderDays');
+  if (reminderDaysSelect) {
+    reminderDaysSelect.options[0].text = t('reminderDays0');
+    reminderDaysSelect.options[1].text = t('reminderDays1');
+    reminderDaysSelect.options[2].text = t('reminderDays2');
+    reminderDaysSelect.options[3].text = t('reminderDays3');
+    reminderDaysSelect.options[4].text = t('reminderDays7');
+  }
+
+  // Update buttons
+  const saveBtn = document.getElementById('saveBtn');
+  if (saveBtn) saveBtn.querySelector('span').textContent = t('btnSave');
+
+  const cancelBtn = document.getElementById('cancelBtn');
+  if (cancelBtn) cancelBtn.querySelector('span').textContent = t('btnCancel');
+
+  const deleteBtn = document.getElementById('deleteBtn');
+  if (deleteBtn) deleteBtn.querySelector('span').textContent = t('btnDelete');
 
   // Update modal if open
   if (modal.classList.contains('active')) {

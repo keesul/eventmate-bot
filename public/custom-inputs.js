@@ -103,12 +103,17 @@ class CustomDatePicker {
     const month = this.currentMonth.getMonth();
 
     // Update title
-    const months = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень',
-                    'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
+    const months = userSettings.language === 'en'
+      ? ['January', 'February', 'March', 'April', 'May', 'June',
+         'July', 'August', 'September', 'October', 'November', 'December']
+      : ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень',
+         'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
     this.modal.querySelector('.calendar-title').textContent = `${months[month]} ${year}`;
 
     // Render weekdays
-    const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
+    const weekdays = userSettings.language === 'en'
+      ? ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+      : ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
     const weekdaysContainer = this.modal.querySelector('.calendar-weekdays');
     weekdaysContainer.textContent = '';
     weekdays.forEach(day => {
@@ -240,7 +245,7 @@ class CustomTimePicker {
     header.className = 'time-picker-header';
     const title = document.createElement('div');
     title.className = 'time-picker-title';
-    title.textContent = 'Виберіть час';
+    title.textContent = window.t ? window.t('timePickerTitle') : 'Виберіть час';
     header.appendChild(title);
 
     const display = document.createElement('div');
@@ -294,13 +299,13 @@ class CustomTimePicker {
     const cancelBtn = document.createElement('button');
     cancelBtn.className = 'btn btn-secondary cancel-time';
     const cancelSpan = document.createElement('span');
-    cancelSpan.textContent = 'Скасувати';
+    cancelSpan.textContent = window.t ? window.t('cancelBtn') : 'Скасувати';
     cancelBtn.appendChild(cancelSpan);
     cancelBtn.addEventListener('click', () => this.close());
     const confirmBtn = document.createElement('button');
     confirmBtn.className = 'btn btn-primary confirm-time';
     const confirmSpan = document.createElement('span');
-    confirmSpan.textContent = 'Підтвердити';
+    confirmSpan.textContent = window.t ? window.t('confirmBtn') : 'Підтвердити';
     confirmBtn.appendChild(confirmSpan);
     confirmBtn.addEventListener('click', () => this.confirm());
     actions.appendChild(cancelBtn);
