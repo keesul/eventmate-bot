@@ -99,14 +99,12 @@ class CustomDatePicker {
   }
 
   close() {
+    this.modal.style.display = 'none';
     this.modal.classList.remove('active');
-    setTimeout(() => {
-      this.modal.style.display = 'none';
-      if (this.selectedDate) {
-        const event = new Event('change', { bubbles: true });
-        this.input.dispatchEvent(event);
-      }
-    }, 300);
+    if (this.selectedDate) {
+      const event = new Event('change', { bubbles: true });
+      this.input.dispatchEvent(event);
+    }
   }
 
   prevMonth() {
@@ -396,10 +394,8 @@ class CustomTimePicker {
   }
 
   close() {
+    this.modal.style.display = 'none';
     this.modal.classList.remove('active');
-    setTimeout(() => {
-      this.modal.style.display = 'none';
-    }, 300);
   }
 
   changeHours(delta) {
