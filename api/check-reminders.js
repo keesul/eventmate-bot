@@ -81,6 +81,7 @@ module.exports = async function handler(req, res) {
 
     let sentCount = 0;
     let checkedCount = 0;
+    const processedEvents = new Set(); // Track processed event IDs to avoid duplicates
 
     // Перевіряємо події на найближчі 7 днів
     for (let daysAhead = 0; daysAhead <= 7; daysAhead++) {
@@ -96,6 +97,11 @@ module.exports = async function handler(req, res) {
 
       for (const event of events) {
         try {
+          // Skip if already processed this event
+          if (processedEvents.has(event.id)) {
+            continue;
+          }
+
           const reminderTime = event.reminder_time || '09:00';
           const reminderDays = event.reminder_days || 1;
           const userTimezone = event.user_timezone || 'UTC';
@@ -135,12 +141,12 @@ module.exports = async function handler(req, res) {
 
           let message = '';
 
-          if (daysAhead === 0) {
+          if (daysUntilEvent === 0) {
             message = `🔔 Сьогодні!\n\n${emoji} ${event.title}`;
-          } else if (daysAhead === 1) {
+          } else if (daysUntilEvent === 1) {
             message = `🔔 Нагадування!\n\nЗавтра:\n${emoji} ${event.title}`;
           } else {
-            message = `🔔 Нагадування!\n\nЧерез ${daysAhead} днів:\n${emoji} ${event.title}`;
+            message = `🔔 Нагадування!\n\nЧерез ${daysUntilEvent} днів:\n${emoji} ${event.title}`;
           }
 
           if (event.event_time) {
@@ -159,12 +165,13 @@ module.exports = async function handler(req, res) {
 
           await sendMessage(event.telegram_id, message);
           sentCount++;
+          processedEvents.add(event.id); // Mark as processed to avoid duplicates
 
           console.log('✅ Sent reminder:', {
             eventId: event.id,
             userId: event.telegram_id,
             title: event.title,
-            daysAhead,
+            daysUntilEvent,
             reminderTime: event.reminder_time,
             currentTime
           });
