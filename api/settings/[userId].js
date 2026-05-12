@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
   // Enable CORS
   const allowedOrigin = process.env.WEBAPP_URL || 'https://eventmate-bot.vercel.app';
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -17,36 +17,30 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // POST /api/settings - Update user settings
-    if (req.method === 'POST') {
-      const { userId, language, theme } = req.body;
+    // GET /api/settings/:userId - Get user settings
+    if (req.method === 'GET') {
+      const { userId } = req.query;
 
       if (!userId) {
         return res.status(400).json({ success: false, error: 'User ID required' });
       }
 
-      // Validate language
-      if (language && !['uk', 'en'].includes(language)) {
-        return res.status(400).json({ success: false, error: 'Invalid language' });
-      }
-
-      // Validate theme
-      if (theme && !['light', 'dark'].includes(theme)) {
-        return res.status(400).json({ success: false, error: 'Invalid theme' });
-      }
-
-      const updates = {};
-      if (language) updates.language = language;
-      if (theme) updates.theme = theme;
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('users')
-        .update(updates)
-        .eq('telegram_id', userId);
+        .select('language, theme, timezone')
+        .eq('telegram_id', userId)
+        .single();
 
       if (error) throw error;
 
-      return res.status(200).json({ success: true });
+      return res.status(200).json({
+        success: true,
+        settings: {
+          language: data?.language || 'uk',
+          theme: data?.theme || 'light',
+          timezone: data?.timezone || 'UTC'
+        }
+      });
     }
 
     return res.status(405).json({ success: false, error: 'Method not allowed' });

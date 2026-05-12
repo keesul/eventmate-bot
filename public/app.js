@@ -508,7 +508,7 @@ async function toggleLanguage() {
     if (data.success) {
       userSettings.language = newLang;
       tg.HapticFeedback.impactOccurred('medium');
-      tg.showAlert(newLang === 'uk' ? 'Мова змінена на українську' : 'Language changed to English');
+      // No alert, just update silently
     } else {
       console.error('Failed to update language:', data.error);
     }
