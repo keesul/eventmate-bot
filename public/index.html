@@ -17,8 +17,15 @@
         <p class="header-subtitle">Ваші події завжди під контролем</p>
       </div>
       <div class="header-actions">
-        <button onclick="toggleTheme()" class="icon-btn" title="Тема">🌓</button>
-        <button onclick="toggleLanguage()" class="icon-btn" title="Мова">🌐</button>
+        <button onclick="toggleTheme()" class="icon-btn theme-toggle" title="Тема">
+          <span class="theme-icon-light">☀️</span>
+          <span class="theme-icon-dark">🌙</span>
+        </button>
+        <div class="language-toggle" onclick="toggleLanguage()">
+          <span class="lang-option" data-lang="uk">UA</span>
+          <span class="lang-separator">|</span>
+          <span class="lang-option" data-lang="en">EN</span>
+        </div>
       </div>
     </div>
 

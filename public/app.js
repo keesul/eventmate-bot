@@ -564,6 +564,22 @@ function applyTheme() {
   document.body.setAttribute('data-theme', userSettings.theme);
   tg.setHeaderColor(userSettings.theme === 'dark' ? '#1a1a1a' : '#ffffff');
   tg.setBackgroundColor(userSettings.theme === 'dark' ? '#1a1a1a' : '#ffffff');
+  updateThemeIcon();
+}
+
+function updateThemeIcon() {
+  // Theme icons are handled by CSS based on data-theme attribute
+}
+
+function updateLanguageUI() {
+  const langOptions = document.querySelectorAll('.lang-option');
+  langOptions.forEach(option => {
+    if (option.dataset.lang === userSettings.language) {
+      option.classList.add('active');
+    } else {
+      option.classList.remove('active');
+    }
+  });
 }
 
 async function toggleTheme() {
@@ -636,6 +652,9 @@ function updateUILanguage() {
       modalTitle.textContent = t('modalTitleNew');
     }
   }
+
+  // Update language toggle UI
+  updateLanguageUI();
 
   // Re-render events to update empty state text
   renderEvents();
