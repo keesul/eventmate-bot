@@ -8,24 +8,21 @@ class CustomDatePicker {
   }
 
   init() {
-    // Create modal
     this.modal = this.createModal();
     document.body.appendChild(this.modal);
 
-    // Wrap input
     const wrapper = document.createElement('div');
     wrapper.className = 'date-input-wrapper';
     this.input.parentNode.insertBefore(wrapper, this.input);
     wrapper.appendChild(this.input);
 
-    // Add click handler
     this.input.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.open();
     });
     this.input.readOnly = true;
 
-    // Set initial value if exists
     if (this.input.value) {
       this.selectedDate = new Date(this.input.value);
       this.updateDisplay();
@@ -51,7 +48,9 @@ class CustomDatePicker {
     const prevBtn = document.createElement('button');
     prevBtn.className = 'calendar-nav-btn prev-month';
     prevBtn.textContent = '‹';
+    prevBtn.type = 'button';
     prevBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.prevMonth();
     });
@@ -59,7 +58,9 @@ class CustomDatePicker {
     const nextBtn = document.createElement('button');
     nextBtn.className = 'calendar-nav-btn next-month';
     nextBtn.textContent = '›';
+    nextBtn.type = 'button';
     nextBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.nextMonth();
     });
@@ -80,8 +81,9 @@ class CustomDatePicker {
     content.appendChild(days);
     modal.appendChild(content);
 
-    modal.addEventListener('mousedown', (e) => {
-      if (e.target === e.currentTarget) {
+    // Close on backdrop click only
+    modal.addEventListener('click', (e) => {
+      if (e.target.classList.contains('calendar-modal')) {
         this.close();
       }
     });
@@ -92,17 +94,19 @@ class CustomDatePicker {
   open() {
     this.currentMonth = this.selectedDate ? new Date(this.selectedDate) : new Date();
     this.render();
-    this.modal.classList.add('active');
+    this.modal.style.display = 'flex';
+    setTimeout(() => this.modal.classList.add('active'), 10);
   }
 
   close() {
     this.modal.classList.remove('active');
-
-    // Trigger change event when closing
-    if (this.selectedDate) {
-      const event = new Event('change', { bubbles: true });
-      this.input.dispatchEvent(event);
-    }
+    setTimeout(() => {
+      this.modal.style.display = 'none';
+      if (this.selectedDate) {
+        const event = new Event('change', { bubbles: true });
+        this.input.dispatchEvent(event);
+      }
+    }, 300);
   }
 
   prevMonth() {
@@ -119,7 +123,6 @@ class CustomDatePicker {
     const year = this.currentMonth.getFullYear();
     const month = this.currentMonth.getMonth();
 
-    // Update title
     const months = userSettings.language === 'en'
       ? ['January', 'February', 'March', 'April', 'May', 'June',
          'July', 'August', 'September', 'October', 'November', 'December']
@@ -127,7 +130,6 @@ class CustomDatePicker {
          'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
     this.modal.querySelector('.calendar-title').textContent = `${months[month]} ${year}`;
 
-    // Render weekdays
     const weekdays = userSettings.language === 'en'
       ? ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
       : ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
@@ -140,7 +142,6 @@ class CustomDatePicker {
       weekdaysContainer.appendChild(div);
     });
 
-    // Render days
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const prevLastDay = new Date(year, month, 0);
@@ -152,20 +153,17 @@ class CustomDatePicker {
     const daysContainer = this.modal.querySelector('.calendar-days');
     daysContainer.textContent = '';
 
-    // Previous month days
     for (let i = firstDayOfWeek - 1; i >= 0; i--) {
       const day = daysInPrevMonth - i;
       const btn = this.createDayButton(day, true, year, month - 1);
       daysContainer.appendChild(btn);
     }
 
-    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       const btn = this.createDayButton(day, false, year, month);
       daysContainer.appendChild(btn);
     }
 
-    // Next month days
     const totalCells = daysContainer.children.length;
     const remainingCells = 42 - totalCells;
     for (let day = 1; day <= remainingCells; day++) {
@@ -178,6 +176,7 @@ class CustomDatePicker {
     const btn = document.createElement('button');
     btn.className = 'calendar-day';
     btn.textContent = day;
+    btn.type = 'button';
 
     if (otherMonth) {
       btn.classList.add('other-month');
@@ -199,6 +198,7 @@ class CustomDatePicker {
     }
 
     btn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.selectDate(date);
     });
@@ -209,8 +209,7 @@ class CustomDatePicker {
   selectDate(date) {
     this.selectedDate = date;
     this.updateDisplay();
-    this.render(); // Re-render to show selected date
-    // Don't close modal - let user confirm or click outside
+    this.render();
   }
 
   updateDisplay() {
@@ -242,6 +241,7 @@ class CustomTimePicker {
     wrapper.appendChild(this.input);
 
     this.input.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.open();
     });
@@ -297,14 +297,18 @@ class CustomTimePicker {
     const hoursUp = document.createElement('button');
     hoursUp.className = 'time-picker-btn hours-up';
     hoursUp.textContent = '▲';
+    hoursUp.type = 'button';
     hoursUp.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.changeHours(1);
     });
     const hoursDown = document.createElement('button');
     hoursDown.className = 'time-picker-btn hours-down';
     hoursDown.textContent = '▼';
+    hoursDown.type = 'button';
     hoursDown.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.changeHours(-1);
     });
@@ -316,14 +320,18 @@ class CustomTimePicker {
     const minutesUp = document.createElement('button');
     minutesUp.className = 'time-picker-btn minutes-up';
     minutesUp.textContent = '▲';
+    minutesUp.type = 'button';
     minutesUp.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.changeMinutes(5);
     });
     const minutesDown = document.createElement('button');
     minutesDown.className = 'time-picker-btn minutes-down';
     minutesDown.textContent = '▼';
+    minutesDown.type = 'button';
     minutesDown.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.changeMinutes(-5);
     });
@@ -337,19 +345,23 @@ class CustomTimePicker {
     actions.className = 'time-picker-actions';
     const cancelBtn = document.createElement('button');
     cancelBtn.className = 'btn btn-secondary cancel-time';
+    cancelBtn.type = 'button';
     const cancelSpan = document.createElement('span');
     cancelSpan.textContent = window.t ? window.t('cancelBtn') : 'Скасувати';
     cancelBtn.appendChild(cancelSpan);
     cancelBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.close();
     });
     const confirmBtn = document.createElement('button');
     confirmBtn.className = 'btn btn-primary confirm-time';
+    confirmBtn.type = 'button';
     const confirmSpan = document.createElement('span');
     confirmSpan.textContent = window.t ? window.t('confirmBtn') : 'Підтвердити';
     confirmBtn.appendChild(confirmSpan);
     confirmBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       this.confirm();
     });
@@ -362,8 +374,9 @@ class CustomTimePicker {
     content.appendChild(actions);
     modal.appendChild(content);
 
-    modal.addEventListener('mousedown', (e) => {
-      if (e.target === e.currentTarget) {
+    // Close on backdrop click only
+    modal.addEventListener('click', (e) => {
+      if (e.target.classList.contains('time-picker-modal')) {
         this.close();
       }
     });
@@ -378,11 +391,15 @@ class CustomTimePicker {
       this.minutes = parseInt(m);
     }
     this.render();
-    this.modal.classList.add('active');
+    this.modal.style.display = 'flex';
+    setTimeout(() => this.modal.classList.add('active'), 10);
   }
 
   close() {
     this.modal.classList.remove('active');
+    setTimeout(() => {
+      this.modal.style.display = 'none';
+    }, 300);
   }
 
   changeHours(delta) {
@@ -413,7 +430,6 @@ class CustomTimePicker {
     this.hours = hours;
     e.target.textContent = String(hours).padStart(2, '0');
 
-    // Move cursor to end
     const range = document.createRange();
     const sel = window.getSelection();
     range.selectNodeContents(e.target);
@@ -433,7 +449,6 @@ class CustomTimePicker {
     this.minutes = minutes;
     e.target.textContent = String(minutes).padStart(2, '0');
 
-    // Move cursor to end
     const range = document.createRange();
     const sel = window.getSelection();
     range.selectNodeContents(e.target);
@@ -459,11 +474,17 @@ class CustomTimePicker {
 
 function initCustomInputs() {
   document.querySelectorAll('input[type="date"]').forEach(input => {
-    new CustomDatePicker(input);
+    if (!input.dataset.customPicker) {
+      input.dataset.customPicker = 'true';
+      new CustomDatePicker(input);
+    }
   });
 
   document.querySelectorAll('input[type="time"]').forEach(input => {
-    new CustomTimePicker(input);
+    if (!input.dataset.customPicker) {
+      input.dataset.customPicker = 'true';
+      new CustomTimePicker(input);
+    }
   });
 
   document.querySelectorAll('select').forEach(select => {
