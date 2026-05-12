@@ -126,7 +126,16 @@ class CustomDatePicker {
          'July', 'August', 'September', 'October', 'November', 'December']
       : ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень',
          'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
-    this.modal.querySelector('.calendar-title').textContent = `${months[month]} ${year}`;
+
+    const titleEl = this.modal.querySelector('.calendar-title');
+    titleEl.innerHTML = `${months[month]} <span class="calendar-year-btn">${year}</span>`;
+
+    // Add year picker click handler
+    const yearBtn = titleEl.querySelector('.calendar-year-btn');
+    yearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.showYearPicker();
+    });
 
     const weekdays = userSettings.language === 'en'
       ? ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
@@ -167,6 +176,54 @@ class CustomDatePicker {
     for (let day = 1; day <= remainingCells; day++) {
       const btn = this.createDayButton(day, true, year, month + 1);
       daysContainer.appendChild(btn);
+    }
+  }
+
+  showYearPicker() {
+    const currentYear = this.currentMonth.getFullYear();
+    const yearPickerContainer = document.createElement('div');
+    yearPickerContainer.className = 'calendar-year-picker';
+
+    const yearScroll = document.createElement('div');
+    yearScroll.className = 'calendar-year-scroll';
+
+    const startYear = 1900;
+    const endYear = 2100;
+
+    for (let y = startYear; y <= endYear; y++) {
+      const yearItem = document.createElement('div');
+      yearItem.className = 'calendar-year-item';
+      yearItem.textContent = y;
+      yearItem.dataset.year = y;
+      if (y === currentYear) {
+        yearItem.classList.add('selected');
+      }
+      yearItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.currentMonth.setFullYear(parseInt(yearItem.dataset.year));
+        this.hideYearPicker();
+        this.render();
+      });
+      yearScroll.appendChild(yearItem);
+    }
+
+    yearPickerContainer.appendChild(yearScroll);
+
+    const content = this.modal.querySelector('.calendar-content');
+    content.appendChild(yearPickerContainer);
+
+    setTimeout(() => {
+      const selectedYear = yearScroll.querySelector('.selected');
+      if (selectedYear) {
+        selectedYear.scrollIntoView({ block: 'center' });
+      }
+    }, 10);
+  }
+
+  hideYearPicker() {
+    const yearPicker = this.modal.querySelector('.calendar-year-picker');
+    if (yearPicker) {
+      yearPicker.remove();
     }
   }
 
@@ -267,77 +324,50 @@ class CustomTimePicker {
     title.textContent = window.t ? window.t('timePickerTitle') : 'Виберіть час';
     header.appendChild(title);
 
-    const display = document.createElement('div');
-    display.className = 'time-picker-display';
-    const hoursSpan = document.createElement('span');
-    hoursSpan.className = 'hours-display';
-    hoursSpan.textContent = '09';
-    hoursSpan.contentEditable = 'true';
-    hoursSpan.addEventListener('input', (e) => this.handleHoursInput(e));
-    hoursSpan.addEventListener('focus', (e) => e.target.select());
-    const separator = document.createElement('span');
+    const scrollPickers = document.createElement('div');
+    scrollPickers.className = 'time-scroll-pickers';
+
+    // Hours scroll picker
+    const hoursWrapper = document.createElement('div');
+    hoursWrapper.className = 'time-scroll-wrapper';
+    const hoursScroll = document.createElement('div');
+    hoursScroll.className = 'time-scroll-column';
+    hoursScroll.dataset.type = 'hours';
+    for (let i = 0; i < 24; i++) {
+      const item = document.createElement('div');
+      item.className = 'time-scroll-item';
+      item.textContent = String(i).padStart(2, '0');
+      item.dataset.value = i;
+      hoursScroll.appendChild(item);
+    }
+    hoursWrapper.appendChild(hoursScroll);
+
+    const separator = document.createElement('div');
+    separator.className = 'time-scroll-separator';
     separator.textContent = ':';
-    const minutesSpan = document.createElement('span');
-    minutesSpan.className = 'minutes-display';
-    minutesSpan.textContent = '00';
-    minutesSpan.contentEditable = 'true';
-    minutesSpan.addEventListener('input', (e) => this.handleMinutesInput(e));
-    minutesSpan.addEventListener('focus', (e) => e.target.select());
-    display.appendChild(hoursSpan);
-    display.appendChild(separator);
-    display.appendChild(minutesSpan);
 
-    const controls = document.createElement('div');
-    controls.className = 'time-picker-controls';
+    // Minutes scroll picker
+    const minutesWrapper = document.createElement('div');
+    minutesWrapper.className = 'time-scroll-wrapper';
+    const minutesScroll = document.createElement('div');
+    minutesScroll.className = 'time-scroll-column';
+    minutesScroll.dataset.type = 'minutes';
+    for (let i = 0; i < 60; i++) {
+      const item = document.createElement('div');
+      item.className = 'time-scroll-item';
+      item.textContent = String(i).padStart(2, '0');
+      item.dataset.value = i;
+      minutesScroll.appendChild(item);
+    }
+    minutesWrapper.appendChild(minutesScroll);
 
-    const hoursCol = document.createElement('div');
-    hoursCol.className = 'time-picker-column';
-    const hoursUp = document.createElement('button');
-    hoursUp.className = 'time-picker-btn hours-up';
-    hoursUp.textContent = '▲';
-    hoursUp.type = 'button';
-    hoursUp.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.changeHours(1);
-    });
-    const hoursDown = document.createElement('button');
-    hoursDown.className = 'time-picker-btn hours-down';
-    hoursDown.textContent = '▼';
-    hoursDown.type = 'button';
-    hoursDown.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.changeHours(-1);
-    });
-    hoursCol.appendChild(hoursUp);
-    hoursCol.appendChild(hoursDown);
+    scrollPickers.appendChild(hoursWrapper);
+    scrollPickers.appendChild(separator);
+    scrollPickers.appendChild(minutesWrapper);
 
-    const minutesCol = document.createElement('div');
-    minutesCol.className = 'time-picker-column';
-    const minutesUp = document.createElement('button');
-    minutesUp.className = 'time-picker-btn minutes-up';
-    minutesUp.textContent = '▲';
-    minutesUp.type = 'button';
-    minutesUp.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.changeMinutes(5);
-    });
-    const minutesDown = document.createElement('button');
-    minutesDown.className = 'time-picker-btn minutes-down';
-    minutesDown.textContent = '▼';
-    minutesDown.type = 'button';
-    minutesDown.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.changeMinutes(-5);
-    });
-    minutesCol.appendChild(minutesUp);
-    minutesCol.appendChild(minutesDown);
-
-    controls.appendChild(hoursCol);
-    controls.appendChild(minutesCol);
+    // Setup scroll handlers
+    this.setupScrollPicker(hoursScroll, 'hours');
+    this.setupScrollPicker(minutesScroll, 'minutes');
 
     const actions = document.createElement('div');
     actions.className = 'time-picker-actions';
@@ -367,12 +397,10 @@ class CustomTimePicker {
     actions.appendChild(confirmBtn);
 
     content.appendChild(header);
-    content.appendChild(display);
-    content.appendChild(controls);
+    content.appendChild(scrollPickers);
     content.appendChild(actions);
     modal.appendChild(content);
 
-    // Close on backdrop click only
     modal.addEventListener('click', (e) => {
       if (e.target.classList.contains('time-picker-modal')) {
         this.close();
@@ -382,75 +410,126 @@ class CustomTimePicker {
     return modal;
   }
 
+  setupScrollPicker(column, type) {
+    const itemHeight = 48;
+    let startY = 0;
+    let startScroll = 0;
+    let isDragging = false;
+
+    const updateSelection = () => {
+      const scrollTop = column.scrollTop;
+      const index = Math.round(scrollTop / itemHeight);
+      const value = parseInt(column.children[index]?.dataset.value || 0);
+
+      if (type === 'hours') {
+        this.hours = value;
+      } else {
+        this.minutes = value;
+      }
+
+      // Update selected class
+      Array.from(column.children).forEach((item, i) => {
+        item.classList.toggle('selected', i === index);
+      });
+    };
+
+    const snapToNearest = () => {
+      const scrollTop = column.scrollTop;
+      const index = Math.round(scrollTop / itemHeight);
+      column.scrollTo({
+        top: index * itemHeight,
+        behavior: 'smooth'
+      });
+      updateSelection();
+    };
+
+    column.addEventListener('touchstart', (e) => {
+      isDragging = true;
+      startY = e.touches[0].clientY;
+      startScroll = column.scrollTop;
+    });
+
+    column.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      const deltaY = startY - e.touches[0].clientY;
+      column.scrollTop = startScroll + deltaY;
+      updateSelection();
+    });
+
+    column.addEventListener('touchend', () => {
+      isDragging = false;
+      snapToNearest();
+    });
+
+    column.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startY = e.clientY;
+      startScroll = column.scrollTop;
+      e.preventDefault();
+    });
+
+    column.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const deltaY = startY - e.clientY;
+      column.scrollTop = startScroll + deltaY;
+      updateSelection();
+    });
+
+    column.addEventListener('mouseup', () => {
+      isDragging = false;
+      snapToNearest();
+    });
+
+    column.addEventListener('mouseleave', () => {
+      if (isDragging) {
+        isDragging = false;
+        snapToNearest();
+      }
+    });
+
+    column.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      column.scrollTop += e.deltaY;
+      clearTimeout(column.snapTimeout);
+      column.snapTimeout = setTimeout(snapToNearest, 150);
+    });
+
+    column.addEventListener('scroll', updateSelection);
+  }
+
   open() {
     if (this.input.value) {
       const [h, m] = this.input.value.split(':');
       this.hours = parseInt(h);
       this.minutes = parseInt(m);
     }
-    this.render();
     this.modal.style.display = 'flex';
-    setTimeout(() => this.modal.classList.add('active'), 10);
+    setTimeout(() => {
+      this.modal.classList.add('active');
+      this.scrollToTime();
+    }, 10);
+  }
+
+  scrollToTime() {
+    const hoursColumn = this.modal.querySelector('[data-type="hours"]');
+    const minutesColumn = this.modal.querySelector('[data-type="minutes"]');
+    const itemHeight = 48;
+
+    hoursColumn.scrollTop = this.hours * itemHeight;
+    minutesColumn.scrollTop = this.minutes * itemHeight;
+
+    // Update selected class
+    Array.from(hoursColumn.children).forEach((item, i) => {
+      item.classList.toggle('selected', i === this.hours);
+    });
+    Array.from(minutesColumn.children).forEach((item, i) => {
+      item.classList.toggle('selected', i === this.minutes);
+    });
   }
 
   close() {
     this.modal.style.display = 'none';
     this.modal.classList.remove('active');
-  }
-
-  changeHours(delta) {
-    this.hours = (this.hours + delta + 24) % 24;
-    this.render();
-  }
-
-  changeMinutes(delta) {
-    this.minutes = (this.minutes + delta + 60) % 60;
-    this.render();
-  }
-
-  render() {
-    const hoursStr = String(this.hours).padStart(2, '0');
-    const minutesStr = String(this.minutes).padStart(2, '0');
-    this.modal.querySelector('.hours-display').textContent = hoursStr;
-    this.modal.querySelector('.minutes-display').textContent = minutesStr;
-  }
-
-  handleHoursInput(e) {
-    const value = e.target.textContent.replace(/\D/g, '');
-    if (value === '') return;
-
-    let hours = parseInt(value);
-    if (hours > 23) hours = 23;
-    if (hours < 0) hours = 0;
-
-    this.hours = hours;
-    e.target.textContent = String(hours).padStart(2, '0');
-
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.selectNodeContents(e.target);
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-
-  handleMinutesInput(e) {
-    const value = e.target.textContent.replace(/\D/g, '');
-    if (value === '') return;
-
-    let minutes = parseInt(value);
-    if (minutes > 59) minutes = 59;
-    if (minutes < 0) minutes = 0;
-
-    this.minutes = minutes;
-    e.target.textContent = String(minutes).padStart(2, '0');
-
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.selectNodeContents(e.target);
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
   }
 
   confirm() {
@@ -465,6 +544,100 @@ class CustomTimePicker {
     const hoursStr = String(this.hours).padStart(2, '0');
     const minutesStr = String(this.minutes).padStart(2, '0');
     this.input.value = `${hoursStr}:${minutesStr}`;
+  }
+}
+
+// Custom Select Dropdown
+class CustomSelect {
+  constructor(selectElement) {
+    this.select = selectElement;
+    this.selectedValue = selectElement.value;
+    this.init();
+  }
+
+  init() {
+    this.wrapper = document.createElement('div');
+    this.wrapper.className = 'custom-select-container';
+    this.select.parentNode.insertBefore(this.wrapper, this.select);
+    this.wrapper.appendChild(this.select);
+    this.select.style.display = 'none';
+
+    this.display = document.createElement('div');
+    this.display.className = 'custom-select-display';
+    this.updateDisplay();
+    this.wrapper.appendChild(this.display);
+
+    this.dropdown = document.createElement('div');
+    this.dropdown.className = 'custom-select-dropdown';
+    this.wrapper.appendChild(this.dropdown);
+
+    this.renderOptions();
+
+    this.display.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggle();
+    });
+
+    document.addEventListener('click', () => {
+      this.close();
+    });
+
+    this.select.addEventListener('change', () => {
+      this.selectedValue = this.select.value;
+      this.updateDisplay();
+      this.renderOptions();
+    });
+  }
+
+  renderOptions() {
+    this.dropdown.innerHTML = '';
+    Array.from(this.select.options).forEach(option => {
+      const item = document.createElement('div');
+      item.className = 'custom-select-item';
+      item.textContent = option.textContent;
+      item.dataset.value = option.value;
+
+      if (option.value === this.selectedValue) {
+        item.classList.add('selected');
+      }
+
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.selectOption(option.value);
+      });
+
+      this.dropdown.appendChild(item);
+    });
+  }
+
+  selectOption(value) {
+    this.selectedValue = value;
+    this.select.value = value;
+    this.updateDisplay();
+    this.renderOptions();
+    this.close();
+
+    const event = new Event('change', { bubbles: true });
+    this.select.dispatchEvent(event);
+  }
+
+  updateDisplay() {
+    const selectedOption = Array.from(this.select.options).find(opt => opt.value === this.selectedValue);
+    this.display.textContent = selectedOption ? selectedOption.textContent : '';
+  }
+
+  toggle() {
+    const isOpen = this.wrapper.classList.contains('open');
+    document.querySelectorAll('.custom-select-container.open').forEach(el => {
+      el.classList.remove('open');
+    });
+    if (!isOpen) {
+      this.wrapper.classList.add('open');
+    }
+  }
+
+  close() {
+    this.wrapper.classList.remove('open');
   }
 }
 
@@ -484,12 +657,9 @@ function initCustomInputs() {
   });
 
   document.querySelectorAll('select').forEach(select => {
-    if (!select.parentElement.classList.contains('custom-select-wrapper')) {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'custom-select-wrapper';
-      select.parentNode.insertBefore(wrapper, select);
-      wrapper.appendChild(select);
-      select.classList.add('custom-select');
+    if (!select.dataset.customSelect) {
+      select.dataset.customSelect = 'true';
+      new CustomSelect(select);
     }
   });
 }

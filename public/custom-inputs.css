@@ -11,6 +11,96 @@ select {
 }
 
 /* Custom Select Dropdown */
+.custom-select-container {
+  position: relative;
+}
+
+.custom-select-display {
+  width: 100%;
+  padding: 14px 40px 14px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--tg-theme-bg-color, var(--surface));
+  color: var(--tg-theme-text-color, var(--text-primary));
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+body[data-theme="dark"] .custom-select-display {
+  border-color: rgba(255, 203, 235, 0.2);
+}
+
+.custom-select-display:hover {
+  border-color: #FFCBEB;
+}
+
+.custom-select-container.open .custom-select-display {
+  border-color: #FFCBEB;
+  box-shadow: 0 0 0 3px rgba(255, 203, 235, 0.15);
+}
+
+.custom-select-display::after {
+  content: '▼';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 12px;
+  transition: transform 0.3s;
+}
+
+.custom-select-container.open .custom-select-display::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--tg-theme-bg-color, var(--surface));
+  border: 2px solid #FFCBEB;
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+}
+
+body[data-theme="dark"] .custom-select-dropdown {
+  border-color: rgba(255, 203, 235, 0.3);
+}
+
+.custom-select-container.open .custom-select-dropdown {
+  max-height: 300px;
+  opacity: 1;
+  overflow-y: auto;
+}
+
+.custom-select-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.custom-select-item:hover {
+  background: var(--surface-secondary);
+}
+
+.custom-select-item.selected {
+  background: linear-gradient(135deg, #FFCBEB 0%, #E8B4F5 100%);
+  color: white;
+  font-weight: 600;
+}
+
 .custom-select-wrapper {
   position: relative;
 }
@@ -179,6 +269,57 @@ body[data-theme="dark"] .calendar-content {
   color: var(--text-primary);
 }
 
+.calendar-year-btn {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.calendar-year-btn:hover {
+  background: rgba(255, 203, 235, 0.1);
+}
+
+.calendar-year-picker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--tg-theme-bg-color, var(--surface));
+  border-radius: var(--radius-xl);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-year-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.calendar-year-item {
+  padding: 12px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.calendar-year-item:hover {
+  background: var(--surface-secondary);
+}
+
+.calendar-year-item.selected {
+  background: linear-gradient(135deg, #FFCBEB 0%, #E8B4F5 100%);
+  color: white;
+  font-weight: 700;
+}
+
 .calendar-nav {
   display: flex;
   gap: 8px;
@@ -300,7 +441,7 @@ body[data-theme="dark"] .calendar-nav-btn:active {
   border-radius: var(--radius-xl);
   padding: 24px;
   width: 90%;
-  max-width: 300px;
+  max-width: 320px;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
   transform: translateY(0);
@@ -326,63 +467,83 @@ body[data-theme="dark"] .time-picker-content {
   color: var(--text-primary);
 }
 
-.time-picker-display {
+.time-scroll-pickers {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 16px;
   margin-bottom: 24px;
+  height: 200px;
+  position: relative;
 }
 
-.time-picker-display span {
-  font-size: 48px;
+.time-scroll-pickers::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 48px;
+  transform: translateY(-50%);
+  background: linear-gradient(135deg, rgba(255, 203, 235, 0.1) 0%, rgba(232, 180, 245, 0.1) 100%);
+  border-radius: var(--radius-md);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.time-scroll-wrapper {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.time-scroll-column {
+  height: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 76px 0;
+  position: relative;
+  z-index: 2;
+}
+
+.time-scroll-column::-webkit-scrollbar {
+  display: none;
+}
+
+.time-scroll-item {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  scroll-snap-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+  user-select: none;
+}
+
+.time-scroll-item.selected {
+  font-size: 32px;
   font-weight: 700;
   background: linear-gradient(135deg, #FFCBEB 0%, #E8B4F5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  cursor: text;
-  padding: 4px 8px;
-  border-radius: 8px;
-  transition: all 0.2s;
 }
 
-.time-picker-display span[contenteditable="true"]:focus {
-  outline: none;
-  background: rgba(255, 203, 235, 0.1);
-  -webkit-text-fill-color: var(--text-primary);
-}
-
-.time-picker-controls {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-}
-
-.time-picker-column {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.time-picker-btn {
-  width: 48px;
-  height: 48px;
-  border: none;
-  border-radius: var(--radius-md);
-  background: var(--surface-secondary);
-  color: var(--text-primary);
-  font-size: 20px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.time-picker-btn:hover {
+.time-scroll-separator {
+  font-size: 32px;
+  font-weight: 700;
   background: linear-gradient(135deg, #FFCBEB 0%, #E8B4F5 100%);
-  color: white;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  z-index: 3;
 }
 
 .time-picker-actions {
