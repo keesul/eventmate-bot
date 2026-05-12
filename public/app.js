@@ -488,24 +488,10 @@ function applyTheme() {
 }
 
 async function toggleTheme() {
-  const newTheme = userSettings.theme === 'light' ? 'dark' : 'light';
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/settings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, theme: newTheme })
-    });
-
-    const data = await response.json();
-    if (data.success) {
-      userSettings.theme = newTheme;
-      applyTheme();
-      tg.HapticFeedback.impactOccurred('medium');
-    }
-  } catch (err) {
-    console.error('Error updating theme:', err);
-  }
+  // Always keep light theme
+  userSettings.theme = 'light';
+  applyTheme();
+  tg.HapticFeedback.impactOccurred('light');
 }
 
 async function toggleLanguage() {
@@ -523,65 +509,16 @@ async function toggleLanguage() {
       userSettings.language = newLang;
       tg.HapticFeedback.impactOccurred('medium');
       tg.showAlert(newLang === 'uk' ? 'Мова змінена на українську' : 'Language changed to English');
-      // Reload to apply translations
-      setTimeout(() => location.reload(), 1000);
+    } else {
+      console.error('Failed to update language:', data.error);
     }
   } catch (err) {
     console.error('Error updating language:', err);
   }
 }
 
-async function showStats() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/stats/${userId}`);
-    const data = await response.json();
-
-    if (data.success) {
-      const stats = data.stats;
-      let message = userSettings.language === 'uk'
-        ? `📊 Статистика\n\n` +
-          `Всього подій: ${stats.total}\n` +
-          `🎂 Дні народження: ${stats.byType.birthday}\n` +
-          `⏰ Нагадування: ${stats.byType.reminder}\n` +
-          `🎊 Події: ${stats.byType.event}\n\n` +
-          `Найближчі:\n` +
-          `Сьогодні: ${stats.upcoming.today}\n` +
-          `Цього тижня: ${stats.upcoming.thisWeek}\n` +
-          `Цього місяця: ${stats.upcoming.thisMonth}`
-        : `📊 Statistics\n\n` +
-          `Total events: ${stats.total}\n` +
-          `🎂 Birthdays: ${stats.byType.birthday}\n` +
-          `⏰ Reminders: ${stats.byType.reminder}\n` +
-          `🎊 Events: ${stats.byType.event}\n\n` +
-          `Upcoming:\n` +
-          `Today: ${stats.upcoming.today}\n` +
-          `This week: ${stats.upcoming.thisWeek}\n` +
-          `This month: ${stats.upcoming.thisMonth}`;
-
-      if (stats.nextEvent) {
-        message += userSettings.language === 'uk'
-          ? `\n\n⏭️ Наступна подія:\n${stats.nextEvent.title}\n📅 Через ${stats.nextEvent.daysUntil} дн.`
-          : `\n\n⏭️ Next event:\n${stats.nextEvent.title}\n📅 In ${stats.nextEvent.daysUntil} days`;
-      }
-
-      tg.showAlert(message);
-    }
-  } catch (err) {
-    console.error('Error loading stats:', err);
-  }
-}
-
-function exportEvents() {
-  const exportUrl = `${API_BASE_URL}/api/export/${userId}`;
-  window.open(exportUrl, '_blank');
-  tg.showAlert(userSettings.language === 'uk'
-    ? '📥 Завантаження файлу .ics...'
-    : '📥 Downloading .ics file...');
-}
-
+// Remove stats and export functions
 // Expose functions to window for button clicks
 window.toggleTheme = toggleTheme;
 window.toggleLanguage = toggleLanguage;
-window.showStats = showStats;
-window.exportEvents = exportEvents;
 
