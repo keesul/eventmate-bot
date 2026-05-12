@@ -192,9 +192,18 @@ body[data-theme="dark"] .calendar-content {
   justify-content: center;
 }
 
-.calendar-nav-btn:hover {
+.calendar-nav-btn:active {
   background: linear-gradient(135deg, #FFCBEB 0%, #E8B4F5 100%);
   color: white;
+  transform: scale(0.9);
+}
+
+body[data-theme="dark"] .calendar-nav-btn {
+  background: rgba(255, 203, 235, 0.1);
+}
+
+body[data-theme="dark"] .calendar-nav-btn:active {
+  background: linear-gradient(135deg, #FFCBEB 0%, #E8B4F5 100%);
 }
 
 .calendar-weekdays {
@@ -318,6 +327,16 @@ body[data-theme="dark"] .time-picker-content {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  cursor: text;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.time-picker-display span[contenteditable="true"]:focus {
+  outline: none;
+  background: rgba(255, 203, 235, 0.1);
+  -webkit-text-fill-color: var(--text-primary);
 }
 
 .time-picker-controls {

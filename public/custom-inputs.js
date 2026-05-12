@@ -92,6 +92,12 @@ class CustomDatePicker {
 
   close() {
     this.modal.classList.remove('active');
+
+    // Trigger change event when closing
+    if (this.selectedDate) {
+      const event = new Event('change', { bubbles: true });
+      this.input.dispatchEvent(event);
+    }
   }
 
   prevMonth() {
@@ -198,10 +204,8 @@ class CustomDatePicker {
   selectDate(date) {
     this.selectedDate = date;
     this.updateDisplay();
-    this.close();
-
-    const event = new Event('change', { bubbles: true });
-    this.input.dispatchEvent(event);
+    this.render(); // Re-render to show selected date
+    // Don't close modal - let user confirm or click outside
   }
 
   updateDisplay() {
@@ -262,11 +266,17 @@ class CustomTimePicker {
     const hoursSpan = document.createElement('span');
     hoursSpan.className = 'hours-display';
     hoursSpan.textContent = '09';
+    hoursSpan.contentEditable = 'true';
+    hoursSpan.addEventListener('input', (e) => this.handleHoursInput(e));
+    hoursSpan.addEventListener('focus', (e) => e.target.select());
     const separator = document.createElement('span');
     separator.textContent = ':';
     const minutesSpan = document.createElement('span');
     minutesSpan.className = 'minutes-display';
     minutesSpan.textContent = '00';
+    minutesSpan.contentEditable = 'true';
+    minutesSpan.addEventListener('input', (e) => this.handleMinutesInput(e));
+    minutesSpan.addEventListener('focus', (e) => e.target.select());
     display.appendChild(hoursSpan);
     display.appendChild(separator);
     display.appendChild(minutesSpan);
@@ -380,6 +390,46 @@ class CustomTimePicker {
     const minutesStr = String(this.minutes).padStart(2, '0');
     this.modal.querySelector('.hours-display').textContent = hoursStr;
     this.modal.querySelector('.minutes-display').textContent = minutesStr;
+  }
+
+  handleHoursInput(e) {
+    const value = e.target.textContent.replace(/\D/g, '');
+    if (value === '') return;
+
+    let hours = parseInt(value);
+    if (hours > 23) hours = 23;
+    if (hours < 0) hours = 0;
+
+    this.hours = hours;
+    e.target.textContent = String(hours).padStart(2, '0');
+
+    // Move cursor to end
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.selectNodeContents(e.target);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  handleMinutesInput(e) {
+    const value = e.target.textContent.replace(/\D/g, '');
+    if (value === '') return;
+
+    let minutes = parseInt(value);
+    if (minutes > 59) minutes = 59;
+    if (minutes < 0) minutes = 0;
+
+    this.minutes = minutes;
+    e.target.textContent = String(minutes).padStart(2, '0');
+
+    // Move cursor to end
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.selectNodeContents(e.target);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
   }
 
   confirm() {
