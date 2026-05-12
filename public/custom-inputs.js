@@ -80,9 +80,8 @@ class CustomDatePicker {
     content.appendChild(days);
     modal.appendChild(content);
 
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        e.stopPropagation();
+    modal.addEventListener('mousedown', (e) => {
+      if (e.target === e.currentTarget) {
         this.close();
       }
     });
@@ -363,9 +362,8 @@ class CustomTimePicker {
     content.appendChild(actions);
     modal.appendChild(content);
 
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        e.stopPropagation();
+    modal.addEventListener('mousedown', (e) => {
+      if (e.target === e.currentTarget) {
         this.close();
       }
     });
