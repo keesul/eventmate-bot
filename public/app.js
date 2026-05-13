@@ -311,7 +311,7 @@ function createEventCard(event) {
     dateDiv.appendChild(timeText);
   }
 
-  const countdown = createCountdown(event.event_date);
+  const countdown = createCountdown(event.event_date, event.type, event.is_recurring);
   if (countdown) {
     dateDiv.appendChild(document.createTextNode(' '));
     dateDiv.appendChild(countdown);
@@ -355,15 +355,37 @@ function formatDate(dateStr) {
   return `${date.getDate()} ${months[date.getMonth()]}`;
 }
 
-function createCountdown(dateStr) {
+function createCountdown(dateStr, eventType, isRecurring) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const eventDate = new Date(dateStr);
   eventDate.setHours(0, 0, 0, 0);
 
-  const diffTime = eventDate - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  let diffDays;
+
+  // For birthdays (recurring), calculate days until next occurrence
+  if (eventType === 'birthday' || isRecurring) {
+    const eventMonth = eventDate.getMonth();
+    const eventDay = eventDate.getDate();
+    const currentYear = today.getFullYear();
+
+    // Create date for this year's birthday
+    const thisYearBirthday = new Date(currentYear, eventMonth, eventDay);
+    thisYearBirthday.setHours(0, 0, 0, 0);
+
+    // If birthday already passed this year, use next year
+    if (thisYearBirthday < today) {
+      const nextYearBirthday = new Date(currentYear + 1, eventMonth, eventDay);
+      nextYearBirthday.setHours(0, 0, 0, 0);
+      diffDays = Math.ceil((nextYearBirthday - today) / (1000 * 60 * 60 * 24));
+    } else {
+      diffDays = Math.ceil((thisYearBirthday - today) / (1000 * 60 * 60 * 24));
+    }
+  } else {
+    const diffTime = eventDate - today;
+    diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }
 
   let countdown;
 
@@ -375,8 +397,11 @@ function createCountdown(dateStr) {
     countdown = createElement('span', 'event-countdown countdown-soon', `За ${diffDays} дн.`);
   } else if (diffDays > 7) {
     countdown = createElement('span', 'event-countdown countdown-future', `За ${diffDays} дн.`);
+  } else if (diffDays < 0 && (eventType !== 'birthday' && !isRecurring)) {
+    // Only show "Минуло" for non-recurring events
+    countdown = createElement('span', 'event-countdown countdown-past', 'Минуло');
   } else {
-    countdown = createElement('span', 'event-countdown countdown-future', 'Минуло');
+    countdown = null;
   }
 
   return countdown;
