@@ -684,6 +684,7 @@ async function toggleLanguage() {
 
 function updateUILanguage() {
   // Update header
+  document.querySelector('.header-title').textContent = t('headerTitle');
   document.querySelector('.header-subtitle').textContent = t('headerSubtitle');
 
   // Update tabs
