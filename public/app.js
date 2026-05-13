@@ -37,7 +37,8 @@ const API_BASE_URL = '';
 // Translations
 const translations = {
   uk: {
-    headerSubtitle: 'Ваші події завжди під контролем',
+    headerTitle: 'дарова челік',
+    headerSubtitle: 'шо ти голова',
     tabAll: 'Всі',
     tabBirthdays: '🎂 Дні народження',
     tabReminders: '⏰ Нагадування',
@@ -76,7 +77,8 @@ const translations = {
     cancelBtn: 'Скасувати'
   },
   en: {
-    headerSubtitle: 'Your events always under control',
+    headerTitle: 'darova chelik',
+    headerSubtitle: 'sho ti golova',
     tabAll: 'All',
     tabBirthdays: '🎂 Birthdays',
     tabReminders: '⏰ Reminders',
